@@ -2,6 +2,7 @@ from torch.nn.modules.module import Module
 from torch.nn.parameter import Parameter
 import torch.nn.functional as F
 import torch
+import torch.nn as nn
 
 class Graph():
 
@@ -38,8 +39,6 @@ class InternalGraphConvolutionLayer(Module):
                                                    node_representation_size))
         self.M = Parameter(torch.randn(node_representation_size,
                                                     node_representation_size)) # globalne
-        self.node_vectors = [] # init properly should be a matrix
-        self.T = 1
 
     def forward(self):
         #print (self.W)
@@ -53,17 +52,48 @@ class InternalGraphConvolutionLayer(Module):
         #print ("after", self.internal_graph)
 
 
-#class InternalRepresentationLayer(Module):
-#    def __init__(self, vectors_for_nodes):
-#        super(InternalGraphConvolutionLayer, self).__init__()
-#        self.vectors_for_nodes = vectors_for_nodes
+class InternalRepresentationLayer(Module):
+    def __init__(self, internal_graph = None):
+        super(InternalRepresentationLayer, self).__init__()
+        self.internal_graph = internal_graph
 
-#    def forward(self, input, adj):
-#        return softmax(dodaj_wektorowo_wierzcholki)
+    def forward(self):
+        sum = torch.zeros([1, 3], dtype=torch.float32)
+        for node in self.internal_graph.nodes:
+            sum = sum + node.representation
+        return F.softmax(sum)
 
+class ExternalGraphConvolutionLayer(Module):
 
-#class ExternalGraphConvolutionLayer(Module):
-#
-#    def __init__(self):
-#        pass
+    def __init__(self, node_in_external_graph, node_representation_size):
+        super(ExternalGraphConvolutionLayer, self).__init__()
+        self.node_in_external_graph = node_in_external_graph
+        self.U = Parameter(torch.randn(node_representation_size,
+                                        node_representation_size))
+        self.V = Parameter(torch.randn(node_representation_size,
+                                       node_representation_size)) # globalne
 
+    def forward(self):
+        for node in self.node_in_external_graph.neighbours:
+            sum = torch.mm(node.representation, self.U)
+            for adj_vector in node.neighbours:
+                    sum += torch.mm(adj_vector.representation, self.V)
+            node.representation=F.relu(sum)
+        return F.softmax(node.representation)
+
+class LinkPredictionLayer(Module):
+
+    def __init__(self, external_graph, node_representation_size=3):
+        super(LinkPredictionLayer, self).__init__()
+        self.first_layer = nn.Linear(node_representation_size*2, node_representation_size)
+        self.second_layer = nn.Linear(node_representation_size, 1)
+        self.external_graph = external_graph
+
+    def forward(self, first_idx, second_idx):
+        first_node_representation = self.external_graph.nodes[first_idx].representation
+        second_node_representation = self.external_graph.nodes[second_idx].representation
+        third_tensor = torch.cat((first_node_representation*second_node_representation,
+                                  first_node_representation+second_node_representation), 1)
+        ############################
+        value = F.relu(self.first_layer(third_tensor))
+        return F.relu(self.second_layer(value))
