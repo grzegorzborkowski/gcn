@@ -3,7 +3,7 @@ from modelv2 import DCNNv2
 import torch.nn as nn
 
 Graphs.initialize()
-Graphs.external_graph.print_external_graph() #print_external_graph()
+Graphs.external_graph.print_graph() #print_external_graph()
 
 train_X, train_y, test_X, test_y = Graphs.get_train_valid_examples()
 model = DCNNv2()
