@@ -27,3 +27,4 @@ class DCNN(nn.Module):
         return self.link_predcition_layer.forward(0, 1)
         #second = self.igcn2()
         #print (second)
+
