@@ -17,30 +17,24 @@ class Graphs:
 
     @staticmethod
     def initialize_external_graph():
-        Graphs.external_graph = ()
+        Graphs.external_graph = ExternalGraph()
         with open("../dataset/external_graph_2.csv") as external_graph_file:
             csv_reader = csv.reader(external_graph_file)
             for row_list in csv_reader:
                 row_list = [row.strip() for row in row_list]
                 node = Graphs.external_graph.get_or_create_node_external(int(row_list[0]))
-                for x in row_list[ExternalGraph1:]:
+                for x in row_list[1:]:
                     if x != "":
                         node.add_neighbour(Graphs.external_graph.get_or_create_node_external(int(x)))
 
     @staticmethod
     def intialize_internal_graphs():
-        path = "../dataset/internal_graphs/"
+        path = "../dataset/test_internal_graphs/"
         directory_with_graphs = os.listdir(path)
-        for graph in directory_with_graphs:
+        for graph in directory_with_graphs[:1]:
             id = int(graph.split(".")[0])
             full_path = path + graph
             Graphs.initialize_single_internal_graph_from_file(full_path, id)
-            
-            # with open(full_path) as internal_graph_file:
-            #     csv_reader = csv.reader(internal_graph_file)
-            #     for row_list in csv_reader:
-            #         row_list = [row.strip() for row in row_list]
-            #         print (row_list)
 
     @staticmethod
     def initialize_single_internal_graph_from_file(file_path, id):
@@ -48,14 +42,22 @@ class Graphs:
             raise ValueError("Redundant internal graph")
         else:
             Graphs.internal_graphs[id] = InternalGraph()
-            
+
         with open(file_path) as internal_graph_file:
             csv_reader = csv.reader(internal_graph_file)
-
-
+            for row_list in csv_reader:
+                row_list = [row.strip() for row in row_list]
+                for element in range(1, len(row_list)):
+                    first_node = Graphs.internal_graphs[id].get_or_create_node_internal(int(row_list[0]))
+                    second_node = Graphs.internal_graphs[id].get_or_create_node_internal(int(row_list[element]))
+                    first_node.add_neighbour(second_node)
+                
     @staticmethod
     def get_internal_graph(index):
-        return None
+        if index in Graphs.internal_graphs:
+            return Graphs.internal_graphs[index]
+        else:
+            raise ValueError("No such node in internal graphs")
     
     @staticmethod
     def get_external_graph_node(index):
@@ -85,9 +87,14 @@ class ExternalGraph(AbstractGraph):
     pass
 
 class InternalGraph(AbstractGraph):
-    pass
-
     
+    def get_or_create_node_internal(self, id):
+        if id in self.nodes:
+            return self.nodes[id]
+        else:
+            node = Node(id)
+            self.nodes[id] = node
+            return self.nodes[id]
 
 class Node():
 
@@ -97,8 +104,21 @@ class Node():
         self.neighbours = []
 
     def add_neighbour(self, node):
-        self.neighbours.append(node)
-        node.neighbours.append(self)
+        node_exist = False
+        node_exists_in_neighbour = False
+        for neighbour in self.neighbours:
+            if neighbour.id == node.id:
+                node_exist = True
+                break
+        if not node_exist:
+            self.neighbours.append(node)
+        
+        for neighbour in node.neighbours:
+            if self.id == neighbour.id:
+                node_exists_in_neighbour = True
+                break
+        if not node_exists_in_neighbour:
+            node.neighbours.append(self)
 
     def __str__(self):
         return "Node: " + str(self.id) + " " +  str(len(self.neighbours)) #str(self.representation) + " : " + str(len(self.neighbours))
