@@ -10,7 +10,6 @@ model = DCNNv2()
 loss_fn = nn.CrossEntropyLoss() # zmienic
 
 learning_rate = 0.1
-
 for t in range(250):
     y_pred = model(train_X)
     loss = loss_fn(y_pred, train_y)

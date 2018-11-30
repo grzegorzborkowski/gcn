@@ -21,7 +21,7 @@ class Graphs:
     @staticmethod
     def initialize_external_graph():
         Graphs.external_graph = ExternalGraph()
-        with open("../dataset/external_graph_2.csv") as external_graph_file:
+        with open("../dataset/external_graph.csv") as external_graph_file:
             csv_reader = csv.reader(external_graph_file)
             for row_list in csv_reader:
                 row_list = [row.strip() for row in row_list]
@@ -32,9 +32,9 @@ class Graphs:
 
     @staticmethod
     def intialize_internal_graphs():
-        path = "../dataset/test_internal_graphs/"
+        path = "../dataset/internal_graphs/"
         directory_with_graphs = os.listdir(path)
-        for graph in directory_with_graphs[:1]:
+        for graph in directory_with_graphs:
             id = int(graph.split(".")[0])
             full_path = path + graph
             Graphs.initialize_single_internal_graph_from_file(full_path, id)
@@ -42,7 +42,7 @@ class Graphs:
     @staticmethod
     def initialize_single_internal_graph_from_file(file_path, id):
         if id in Graphs.internal_graphs:
-            raise ValueError("Redundant internal graph")
+            raise ValueError("Redundant internal graph" + str(id))
         else:
             Graphs.internal_graphs[id] = InternalGraph()
 
@@ -51,20 +51,22 @@ class Graphs:
             for row_list in csv_reader:
                 row_list = [row.strip() for row in row_list]
                 for element in range(1, len(row_list)):
-                    first_node = Graphs.internal_graphs[id].get_or_create_node_internal(int(row_list[0]))
-                    second_node = Graphs.internal_graphs[id].get_or_create_node_internal(int(row_list[element]))
-                    first_node.add_neighbour(second_node)
+                    if str(element) != "None":
+                        #print(str(id) + " " + str(element) + " " + str(row_list[element]))
+                        first_node = Graphs.internal_graphs[id].get_or_create_node_internal(int(row_list[0]))
+                        second_node = Graphs.internal_graphs[id].get_or_create_node_internal(int(row_list[element]))
+                        first_node.add_neighbour(second_node)
                 
     @staticmethod
     def get_internal_graph(index):
         if index in Graphs.internal_graphs:
             return Graphs.internal_graphs[index]
         else:
-            raise ValueError("No such node in internal graphs")
+            raise ValueError("No such node in internal graphs " + str(index))
     
     @staticmethod
     def get_external_graph_node(index):
-        return self.external_graph[index]
+        return Graphs.external_graph.nodes[index]
 
     @staticmethod
     def get_train_valid_examples():
@@ -75,20 +77,8 @@ class Graphs:
                 samples_Y.append([1])
         samples_X, smaples_Y = np.array(samples_X), np.array(samples_Y)
         X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(samples_X, samples_Y)
+        print (len(X_train))
         return torch.from_numpy(X_train), torch.from_numpy(X_test), torch.tensor(y_train), torch.tensor(y_test)
-            # print ("key" + str(key) + "value" + str(value))
-        ################3
-        # mamy sobie nasz graf zewnetrzny
-        # i dla roznych par wierzcholkow (x,y) on ma krawedzie
-        # Wszystkie te krawedzie (x,y) podzielic na dwa zbiory
-        # te na ktorych model bedzie trenowany
-        # i te na ktorych model bedzie ewaluowany
-        ##########
-        #########
-        ### # Zbior treningowy: X_train = [[0,1], [0,2], [0,3]], y_train = [1,1,1]
-        #### Zbior walidacyjny: X_valid = [[0,4], [2,4]], y_train = [1,1]
-        ##
-        #################
 
 class AbstractGraph(abc.ABC):
     def __init__(self):
@@ -121,7 +111,7 @@ class InternalGraph(AbstractGraph):
 
 class Node():
 
-    def __init__(self, id, representation=torch.randn(Graphs.node_representation_size, 1)):
+    def __init__(self, id, representation=torch.randn(1, Graphs.node_representation_size)):
         self.representation = representation
         self.id = id
         self.neighbours = []

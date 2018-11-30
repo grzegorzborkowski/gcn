@@ -5,7 +5,6 @@ from torch.nn.modules.module import Module
 from torch.nn.parameter import Parameter
 import torch
 
-
 class DCNNv2(nn.Module):
     def __init__(self):
         super(DCNNv2, self).__init__()
@@ -17,9 +16,9 @@ class DCNNv2(nn.Module):
         self.link_prediction_layer = LinkPredictionLayer()
 
     
-    def forward(self, example):
-        first_index, second_index = example[0], example[1]
-        print ("Called forward with" + str(first_index) + str(second_index))
+    def forward(self, batch):
+        # narazie tylko pierwszy element z batcha
+        first_index, second_index = batch[0][0].item(), batch[0][1].item()
         first_graph_internal_encoder = self.internal_graph_encoder.forward(first_index)
         second_graph_internal_encoder = self.internal_graph_encoder.forward(second_index)
         
@@ -37,16 +36,18 @@ class InternalGraphConvolutionLayer(Module):
         self.M = Parameter(torch.randn(self.node_representation_size,
                                                     self.node_representation_size)) # globalne
         
-    def forward(self, index):
+    def forward(self, index):  
         self.internal_graph = Graphs.get_internal_graph(index)
-        for node in self.internal_graph.nodes:
+        print(self.internal_graph)
+        for key, value in self.internal_graph.nodes.items():
+            node = value
             sum = torch.mm(node.representation, self.W)
             for adj_vector in node.neighbours:
                     sum += torch.mm(adj_vector.representation, self.M)
             node.representation=F.relu(sum)
 
         sum = torch.zeros([1, 3], dtype=torch.float32)
-        for node in self.internal_graph.nodes:
+        for key, node in self.internal_graph.nodes.items():
             sum = sum + node.representation
         return F.softmax(sum)
 
