@@ -17,7 +17,9 @@ class DCNNv2(nn.Module):
         self.link_prediction_layer = LinkPredictionLayer()
 
     
-    def forward(self, first_index, second_index):
+    def forward(self, example):
+        first_index, second_index = example[0], example[1]
+        print ("Called forward with" + str(first_index) + str(second_index))
         first_graph_internal_encoder = self.internal_graph_encoder.forward(first_index)
         second_graph_internal_encoder = self.internal_graph_encoder.forward(second_index)
         

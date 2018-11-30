@@ -4,8 +4,8 @@ import torch.nn as nn
 
 Graphs.initialize()
 #Graphs.external_graph.print_graph() #print_external_graph()
-Graphs.get_internal_graph(0).print_graph()
-#train_X, train_y, test_X, test_y = Graphs.get_train_valid_examples()
+# Graphs.get_internal_graph(0).print_graph()
+train_X, test_X, train_y, test_y = Graphs.get_train_valid_examples()
 model = DCNNv2()
 loss_fn = nn.CrossEntropyLoss() # zmienic
 

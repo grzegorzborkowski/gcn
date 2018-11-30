@@ -3,12 +3,15 @@ import torch
 import collections
 import abc
 import os
+import numpy as np
+import sklearn.model_selection
 
 class Graphs:
 
     node_representation_size = 3
     external_graph = None
     internal_graphs = {} # id_of_node_in_external_graph -> internal_graph
+    train_to_valid_ratio = 0.7
     
     @staticmethod
     def initialize():
@@ -65,7 +68,27 @@ class Graphs:
 
     @staticmethod
     def get_train_valid_examples():
-        pass
+        samples_X, samples_Y = [], []
+        for key, value in Graphs.external_graph.nodes.items():
+            for neighbour in value.neighbours:
+                samples_X.append([key, neighbour.id])
+                samples_Y.append([1])
+        samples_X, smaples_Y = np.array(samples_X), np.array(samples_Y)
+        X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(samples_X, samples_Y)
+        return torch.from_numpy(X_train), torch.from_numpy(X_test), torch.tensor(y_train), torch.tensor(y_test)
+            # print ("key" + str(key) + "value" + str(value))
+        ################3
+        # mamy sobie nasz graf zewnetrzny
+        # i dla roznych par wierzcholkow (x,y) on ma krawedzie
+        # Wszystkie te krawedzie (x,y) podzielic na dwa zbiory
+        # te na ktorych model bedzie trenowany
+        # i te na ktorych model bedzie ewaluowany
+        ##########
+        #########
+        ### # Zbior treningowy: X_train = [[0,1], [0,2], [0,3]], y_train = [1,1,1]
+        #### Zbior walidacyjny: X_valid = [[0,4], [2,4]], y_train = [1,1]
+        ##
+        #################
 
 class AbstractGraph(abc.ABC):
     def __init__(self):
