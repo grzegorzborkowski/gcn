@@ -17,28 +17,30 @@ class DCNNv2(nn.Module):
 
     
     def forward(self, batch):
-        # narazie tylko pierwszy element z batcha
-        first_index, second_index = batch[0][0].item(), batch[0][1].item()
-        first_graph_internal_encoder = self.internal_graph_encoder.forward(first_index)
-        second_graph_internal_encoder = self.internal_graph_encoder.forward(second_index)
-        
-        first_graph_embedding = self.external_graph_encoder.forward(first_index, first_graph_internal_encoder)
-        second_graph_embedding = self.external_graph_encoder.forward(second_index, second_graph_internal_encoder)
+        result = []
+        for element in batch:
+            first_index, second_index = element[0].item(), element[1].item()
+            first_graph_internal_encoder = self.internal_graph_encoder.forward(first_index)
+            second_graph_internal_encoder = self.internal_graph_encoder.forward(second_index)
+            
+            first_graph_embedding = self.external_graph_encoder.forward(first_index, first_graph_internal_encoder)
+            second_graph_embedding = self.external_graph_encoder.forward(second_index, second_graph_internal_encoder)
 
-        return self.link_prediction_layer.forward(first_graph_embedding, second_graph_embedding)
+            result.append(self.link_prediction_layer.forward(first_graph_embedding, second_graph_embedding))
+
+        return torch.stack(result)
 
 class InternalGraphConvolutionLayer(Module):
     def __init__(self):
         super(InternalGraphConvolutionLayer, self).__init__()
         self.node_representation_size = 3
         self.W = Parameter(torch.randn(self.node_representation_size,
-                                                   self.node_representation_size))
+                                                   self.node_representation_size), requires_grad=True)
         self.M = Parameter(torch.randn(self.node_representation_size,
-                                                    self.node_representation_size)) # globalne
+                                                    self.node_representation_size), requires_grad=True) # globalne
         
     def forward(self, index):  
         self.internal_graph = Graphs.get_internal_graph(index)
-        print(self.internal_graph)
         for key, value in self.internal_graph.nodes.items():
             node = value
             sum = torch.mm(node.representation, self.W)
@@ -47,7 +49,7 @@ class InternalGraphConvolutionLayer(Module):
             node.representation=F.relu(sum)
 
         sum = torch.zeros([1, 3], dtype=torch.float32)
-        for key, node in self.internal_graph.nodes.items():
+        for key,node in self.internal_graph.nodes.items():
             sum = sum + node.representation
         return F.softmax(sum)
 
@@ -57,9 +59,9 @@ class ExternalGraphConvolutionLayer(Module):
         super(ExternalGraphConvolutionLayer, self).__init__()
         self.node_representation_size = 3
         self.U = Parameter(torch.randn(self.node_representation_size,
-                                        self.node_representation_size))
+                                        self.node_representation_size), requires_grad=True)
         self.V = Parameter(torch.randn(self.node_representation_size,
-                                       self.node_representation_size)) # globalne
+                                       self.node_representation_size), requires_grad=True) # globalne
 
     def forward(self, index, initial_embedding):
         self.node_in_external_graph = Graphs.get_external_graph_node(index)
@@ -77,12 +79,13 @@ class LinkPredictionLayer(Module):
         super(LinkPredictionLayer, self).__init__()
         self.node_representation_size = 3
         self.first_layer = nn.Linear(self.node_representation_size*2, self.node_representation_size)
-        self.second_layer = nn.Linear(self.node_representation_size, 1)
+        self.second_layer = nn.Linear(self.node_representation_size, 2)
 
     def forward(self, first_node_embedding, second_node_embedding):
         third_tensor = torch.cat((first_node_embedding*second_node_embedding,
                                   first_node_embedding+second_node_embedding), 1)
         ############################
         value = F.relu(self.first_layer(third_tensor))
-        return F.relu(self.second_layer(value))
+        x =  F.softmax(self.second_layer(value))
+        return x
 

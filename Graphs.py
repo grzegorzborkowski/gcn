@@ -74,11 +74,11 @@ class Graphs:
         for key, value in Graphs.external_graph.nodes.items():
             for neighbour in value.neighbours:
                 samples_X.append([key, neighbour.id])
-                samples_Y.append([1])
+                samples_Y.append([0,1]) # like one-hot encoding
         samples_X, smaples_Y = np.array(samples_X), np.array(samples_Y)
         X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(samples_X, samples_Y)
         print (len(X_train))
-        return torch.from_numpy(X_train), torch.from_numpy(X_test), torch.tensor(y_train), torch.tensor(y_test)
+        return torch.from_numpy(X_train), torch.from_numpy(X_test), torch.FloatTensor(y_train), torch.FloatTensor(y_test)
 
 class AbstractGraph(abc.ABC):
     def __init__(self):
