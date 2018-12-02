@@ -2,42 +2,50 @@ from Graphs import *
 from modelv2 import DCNNv2
 import torch.nn as nn
 from sklearn.metrics import accuracy_score
+import torch.utils.data
 
+torch.set_printoptions(threshold=5000)
 Graphs.initialize()
 #Graphs.external_graph.print_graph() #print_external_graph()
 # Graphs.get_internal_graph(0).print_graph()
 train_X, test_X, train_y, test_y = Graphs.get_train_valid_examples()
-print (train_y)
+train_datasets = torch.utils.data.TensorDataset(train_X, train_y)
+train_loader = torch.utils.data.DataLoader(train_datasets, batch_size=2)
+
 model = DCNNv2()
-loss_fn = nn.BCELoss() # zmienic
-print (train_y)
+loss_fn = nn.BCELoss(size_average=False) # zmienic
 learning_rate = 0.0001
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
-for t in range(5):
-    y_pred = model(train_X)
+for i, data in enumerate(train_loader, 0):
+    inputs, labels = data
+    print (inputs)
+    print (type(inputs))
+    y_pred = model(inputs)
+
     #print (y_pred)
     #print (y_pred.shape)
-    loss = loss_fn(y_pred, train_y)
+    loss = loss_fn(y_pred, labels)
 
-    if t % 25 == 0:
-        print (t, loss.item())
+    print ("loss", i, loss.item())
 
-    model.zero_grad()
+    optimizer.zero_grad()
     loss.backward(retain_graph=True)
+   
     optimizer.step()
-    #with torch.no_grad():
-    #    for name, param in model.named_parameters():
-    #        print (name, param, "data", param.data)
-    ##        print ("param_grad" + str(param.grad))
-     #       param.data -= learning_rate * param.grad
-
-    predict_out = model(test_X)
-    _, predict_y = torch.max(predict_out, 1)
-    print(test)
-    print (test_y)
     
+    predict_out = model(test_X)
+    print ("predicted_out", predict_out)
+    predict_y = torch.round(predict_out)
+    #print ("predicted_maxed", predict_y)
+
     print ("predicted")
     print (predict_y)
-    accuracy = accuracy_score(test_y, predict_y)
-    print("accuracy" + str(accuracy))
+    print (predict_y.shape)
+    print ("test_y", test_y)
+    print (test_y.shape)
+    
+    #accuracy = accuracy_score(test_y, predict_y)
+    correct = (predict_y == test_y).float().sum() 
+    print ("accuracy", correct.item()/(len(test_y)*2)
+    #print("accuracy", str(accuracy))

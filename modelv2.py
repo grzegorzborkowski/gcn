@@ -5,6 +5,7 @@ from torch.nn.modules.module import Module
 from torch.nn.parameter import Parameter
 import torch
 
+
 class DCNNv2(nn.Module):
     def __init__(self):
         super(DCNNv2, self).__init__()
@@ -27,8 +28,9 @@ class DCNNv2(nn.Module):
             second_graph_embedding = self.external_graph_encoder.forward(second_index, second_graph_internal_encoder)
 
             result.append(self.link_prediction_layer.forward(first_graph_embedding, second_graph_embedding))
-
-        return torch.stack(result)
+        to_return =  torch.stack(result)
+        reshaped = to_return.view(len(batch), 2)
+        return reshaped
 
 class InternalGraphConvolutionLayer(Module):
     def __init__(self):
@@ -38,6 +40,8 @@ class InternalGraphConvolutionLayer(Module):
                                                    self.node_representation_size), requires_grad=True)
         self.M = Parameter(torch.randn(self.node_representation_size,
                                                     self.node_representation_size), requires_grad=True) # globalne
+        torch.nn.init.xavier_normal(self.W)
+        torch.nn.init.xavier_normal(self.M)
         
     def forward(self, index):  
         self.internal_graph = Graphs.get_internal_graph(index)
@@ -62,9 +66,12 @@ class ExternalGraphConvolutionLayer(Module):
                                         self.node_representation_size), requires_grad=True)
         self.V = Parameter(torch.randn(self.node_representation_size,
                                        self.node_representation_size), requires_grad=True) # globalne
+        torch.nn.init.xavier_normal(self.U)
+        torch.nn.init.xavier_normal(self.V)
 
     def forward(self, index, initial_embedding):
         self.node_in_external_graph = Graphs.get_external_graph_node(index)
+        self.node_in_external_graph.representation = initial_embedding
         ######################## USE INITIAL EMBEDDING FRM INTERNAL GRAPH ########################
         for node in self.node_in_external_graph.neighbours:
             sum = torch.mm(node.representation, self.U)
