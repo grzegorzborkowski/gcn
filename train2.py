@@ -35,17 +35,21 @@ for i, data in enumerate(train_loader, 0):
     optimizer.step()
     
     predict_out = model(test_X)
-    print ("predicted_out", predict_out)
+    # print ("predicted_out", predict_out)
     predict_y = torch.round(predict_out)
     #print ("predicted_maxed", predict_y)
 
-    print ("predicted")
-    print (predict_y)
-    print (predict_y.shape)
-    print ("test_y", test_y)
-    print (test_y.shape)
+    # print ("predicted")
+    # print (predict_y)
+    # print (predict_y.shape)
+    # print ("test_y", test_y)
+    # print (test_y.shape)
+
+    for name, param in model.named_parameters():
+        if param.requires_grad:
+            print (name, "\n", param.data, "\n", "grad", param.grad)
     
     #accuracy = accuracy_score(test_y, predict_y)
     correct = (predict_y == test_y).float().sum() 
-    print ("accuracy", correct.item()/(len(test_y)*2)
+    print ("accuracy", correct.item()/(len(test_y)*2))
     #print("accuracy", str(accuracy))
