@@ -3,6 +3,7 @@ from modelv2 import DCNNv2
 import torch.nn as nn
 from sklearn.metrics import accuracy_score
 import torch.utils.data
+import torch.nn.functional as F
 
 torch.set_printoptions(threshold=5000)
 Graphs.initialize()
@@ -10,11 +11,11 @@ Graphs.initialize()
 # Graphs.get_internal_graph(0).print_graph()
 train_X, test_X, train_y, test_y = Graphs.get_train_valid_examples()
 train_datasets = torch.utils.data.TensorDataset(train_X, train_y)
-train_loader = torch.utils.data.DataLoader(train_datasets, batch_size=2)
+train_loader = torch.utils.data.DataLoader(train_datasets, batch_size=1)
 
 model = DCNNv2()
-loss_fn = nn.BCELoss(size_average=False) # zmienic
-learning_rate = 0.0001
+#loss_fn = F.binary_cross_entropy(size_average=False) # zmienic
+learning_rate = 1.0
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 for i, data in enumerate(train_loader, 0):
@@ -25,11 +26,13 @@ for i, data in enumerate(train_loader, 0):
 
     #print (y_pred)
     #print (y_pred.shape)
-    loss = loss_fn(y_pred, labels)
-
+    #loss = loss_fn(y_pred, labels)
+    loss = F.binary_cross_entropy(y_pred, labels)
     print ("loss", i, loss.item())
-
+    print (labels)
+    
     optimizer.zero_grad()
+    print (optimizer)
     loss.backward(retain_graph=True)
    
     optimizer.step()

@@ -8,10 +8,11 @@ import sklearn.model_selection
 
 class Graphs:
 
-    node_representation_size = 3
+    node_representation_size = 6
     external_graph = None
     internal_graphs = {} # id_of_node_in_external_graph -> internal_graph
     train_to_valid_ratio = 0.7
+    unique_internal_nodes = 2300
     
     @staticmethod
     def initialize():
@@ -115,6 +116,7 @@ class Node():
         self.representation = representation
         self.id = id
         self.neighbours = []
+        #torch.nn.init.xavier_normal(self.representation)
 
     def add_neighbour(self, node):
         node_exist = False
