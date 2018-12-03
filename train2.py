@@ -4,6 +4,7 @@ import torch.nn as nn
 from sklearn.metrics import accuracy_score
 import torch.utils.data
 import torch.nn.functional as F
+from torch.autograd.variable import Variable
 
 torch.set_printoptions(threshold=5000)
 Graphs.initialize()
@@ -24,10 +25,10 @@ for i, data in enumerate(train_loader, 0):
     print (type(inputs))
     y_pred = model(inputs)
 
-    #print (y_pred)
-    #print (y_pred.shape)
-    #loss = loss_fn(y_pred, labels)
+  
     loss = F.binary_cross_entropy(y_pred, labels)
+    print (y_pred)
+    print (labels)
     print ("loss", i, loss.item())
     print (labels)
     

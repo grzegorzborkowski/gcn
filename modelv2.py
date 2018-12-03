@@ -55,30 +55,25 @@ class InternalGraphConvolutionLayer(Module):
         self.W = Parameter(torch.randn(self.node_representation_size,
                                                    self.node_representation_size), requires_grad=True)
         self.M = Parameter(torch.randn(self.node_representation_size,
-                                                    self.node_representation_size), requires_grad=True) # globalne
-        self.Internal_Node_Impact = Parameter(torch.randn(self.how_many_internal_nodes_type, self.node_representation_size), requires_grad=True)
+                                                    self.node_representation_size), requires_grad=True) 
+        self.Internal_Node_impact = nn.Embedding(self.how_many_internal_nodes_type, self.node_representation_size, sparse=False)
         torch.nn.init.xavier_normal(self.W)
         torch.nn.init.xavier_normal(self.M)
-        torch.nn.init.xavier_normal(self.Internal_Node_Impact)
         
     def forward(self, index):
         result = 0
+        sum = torch.randn(self.node_representation_size, 1)
         self.internal_graph = Graphs.get_internal_graph(index)
         for key, value in self.internal_graph.nodes.items():
-            graph_value = self.Internal_Node_Impact[key, :]
+            graph_value = self.Internal_Node_impact(torch.LongTensor([key]))
             sum = torch.mm(self.W, graph_value.reshape(self.node_representation_size, 1))
             for adj_vector in self.internal_graph.nodes[key].neighbours:
-                    vec = self.Internal_Node_Impact[adj_vector.id, :]
-                    vec = vec.reshape(self.node_representation_size,1)
-                    sum += torch.mm(self.M, vec)
-            #node.representation=F.relu(sum)
+                vec = self.Internal_Node_impact(torch.LongTensor([adj_vector.id]))
+                vec = vec.reshape(self.node_representation_size,1)
+                sum += torch.mm(self.M, vec)
             sum = F.relu(sum)
-            #print (sum)
             result += sum
 
-        #sum = torch.zeros([1, 3], dtype=torch.float32)
-        #for key,node in self.internal_graph.nodes.items():
-        #    sum = sum + node.representation
         return F.softmax(result)
 
 class ExternalGraphConvolutionLayer(Module):
@@ -94,27 +89,12 @@ class ExternalGraphConvolutionLayer(Module):
         torch.nn.init.xavier_normal(self.V)
 
     def forward(self, index, initial_embedding, neighbours_embeddings):
-        result = initial_embedding
         result = torch.mm(self.U, initial_embedding)
         for neighbour in neighbours_embeddings:
-            result += torch.mm(self.V, neighbour)
+           result += torch.mm(self.V, neighbour)
         result = F.relu(result)
         result = F.softmax(result)
-        #print (result)
-        #self.node_in_external_graph.representation = result
         return result
-
-        # ######################## USE INITIAL EMBEDDING FRM INTERNAL GRAPH ########################
-        # for node in self.node_in_external_graph.neighbours:
-        #     sum = torch.mm(node.representation, self.U)
-        #     for adj_vector in node.neighbours:
-        #         print(str(torch.mm(adj_vector.representation, self.V)))
-        #         sum += torch.mm(adj_vector.representation, self.V)
-        #     node.representation=F.relu(sum)
-        # print(str(F.softmax(sum)))
-        # to_return = F.softmax(node.representation)
-        # node.representation
-        # return F.softmax(sum)
 
 class LinkPredictionLayer(Module):
 
@@ -126,14 +106,10 @@ class LinkPredictionLayer(Module):
         self.second_layer = nn.Linear(self.node_representation_size, 2)
 
     def forward(self, first_node_embedding, second_node_embedding):
-        return F.softmax(torch.randn(2,1))
-        # print("fne", first_node_embedding)
-        #print ("sne", second_node_embedding)
+
         third_tensor = torch.cat((first_node_embedding*second_node_embedding,
                                   first_node_embedding+second_node_embedding), 0)
-        x =  F.relu(self.first_layer(third_tensor))
+        third_tensor = third_tensor.reshape(1,Graphs.node_representation_size*2)
+        x =  self.first_layer(third_tensor)
         x = F.softmax(self.second_layer(x))
-        print ("xxx", x)
         return x
-        # print ("x_shape", x.shape)
-        #

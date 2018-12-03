@@ -8,7 +8,7 @@ import sklearn.model_selection
 
 class Graphs:
 
-    node_representation_size = 6
+    node_representation_size = 3
     external_graph = None
     internal_graphs = {} # id_of_node_in_external_graph -> internal_graph
     train_to_valid_ratio = 0.7
