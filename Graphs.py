@@ -12,7 +12,7 @@ class Graphs:
     external_graph = None
     internal_graphs = {} # id_of_node_in_external_graph -> internal_graph
     train_to_valid_ratio = 0.7
-    unique_internal_nodes = 2300
+    unique_internal_nodes = 2268
     
     @staticmethod
     def initialize():

@@ -57,8 +57,8 @@ class InternalGraphConvolutionLayer(Module):
         self.M = Parameter(torch.randn(self.node_representation_size,
                                                     self.node_representation_size), requires_grad=True) 
         self.Internal_Node_impact = nn.Embedding(self.how_many_internal_nodes_type, self.node_representation_size, sparse=False)
-        torch.nn.init.xavier_normal(self.W)
-        torch.nn.init.xavier_normal(self.M)
+        torch.nn.init.xavier_normal_(self.W)
+        torch.nn.init.xavier_normal_(self.M)
         
     def forward(self, index):
         result = 0
@@ -74,7 +74,7 @@ class InternalGraphConvolutionLayer(Module):
             sum = F.relu(sum)
             result += sum
 
-        return F.softmax(result)
+        return F.softmax(result, dim=1)
 
 class ExternalGraphConvolutionLayer(Module):
 
@@ -85,15 +85,15 @@ class ExternalGraphConvolutionLayer(Module):
                                         self.node_representation_size), requires_grad=True)
         self.V = Parameter(torch.randn(self.node_representation_size,
                                        self.node_representation_size), requires_grad=True) # globalne
-        torch.nn.init.xavier_normal(self.U)
-        torch.nn.init.xavier_normal(self.V)
+        torch.nn.init.xavier_normal_(self.U)
+        torch.nn.init.xavier_normal_(self.V)
 
     def forward(self, index, initial_embedding, neighbours_embeddings):
         result = torch.mm(self.U, initial_embedding)
         for neighbour in neighbours_embeddings:
            result += torch.mm(self.V, neighbour)
         result = F.relu(result)
-        result = F.softmax(result)
+        result = F.softmax(result, dim=1)
         return result
 
 class LinkPredictionLayer(Module):
@@ -101,15 +101,15 @@ class LinkPredictionLayer(Module):
     def __init__(self):
         super(LinkPredictionLayer, self).__init__()
         self.node_representation_size = Graphs.node_representation_size
-        print (self.node_representation_size)
         self.first_layer = nn.Linear(self.node_representation_size*2, self.node_representation_size)
         self.second_layer = nn.Linear(self.node_representation_size, 2)
-
+        #self.first_layer = nn.Linear(self.node_representation_size*2, 2)
     def forward(self, first_node_embedding, second_node_embedding):
-
-        third_tensor = torch.cat((first_node_embedding*second_node_embedding,
-                                  first_node_embedding+second_node_embedding), 0)
+        third_tensor = torch.cat((first_node_embedding, second_node_embedding), 0)
+        # third_tensor = torch.cat((first_node_embedding*second_node_embedding,
+                                #   first_node_embedding+second_node_embedding), 0)
         third_tensor = third_tensor.reshape(1,Graphs.node_representation_size*2)
-        x =  self.first_layer(third_tensor)
-        x = F.softmax(self.second_layer(x))
+        x = F.leaky_relu(self.first_layer(third_tensor))
+        x = self.second_layer(x)
+        x = F.softmax(x, dim=1)
         return x

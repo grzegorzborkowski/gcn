@@ -16,7 +16,7 @@ train_loader = torch.utils.data.DataLoader(train_datasets, batch_size=1)
 
 model = DCNNv2()
 #loss_fn = F.binary_cross_entropy(size_average=False) # zmienic
-learning_rate = 1.0
+learning_rate = 0.0001
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 for i, data in enumerate(train_loader, 0):
@@ -54,6 +54,7 @@ for i, data in enumerate(train_loader, 0):
             print (name, "\n", param.data, "\n", "grad", param.grad)
     
     #accuracy = accuracy_score(test_y, predict_y)
-    correct = (predict_y == test_y).float().sum() 
-    print ("accuracy", correct.item()/(len(test_y)*2))
+    if i % 25 == 0:
+        correct = (predict_y == test_y).float().sum() 
+        print ("accuracy", correct.item()/(len(test_y)*2))
     #print("accuracy", str(accuracy))
