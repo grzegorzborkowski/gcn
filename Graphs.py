@@ -5,14 +5,16 @@ import abc
 import os
 import numpy as np
 import sklearn.model_selection
+import random
 
 class Graphs:
-
-    node_representation_size = 3
+    
+    node_representation_size = 64
     external_graph = None
     internal_graphs = {} # id_of_node_in_external_graph -> internal_graph
     train_to_valid_ratio = 0.7
     unique_internal_nodes = 2268
+    negative_to_positive_samples_ratio = 2.0
     
     @staticmethod
     def initialize():
@@ -72,10 +74,21 @@ class Graphs:
     @staticmethod
     def get_train_valid_examples():
         samples_X, samples_Y = [], []
+        number_of_positive_samples = 0
+        negative_samples_X = []
         for key, value in Graphs.external_graph.nodes.items():
             for neighbour in value.neighbours:
                 samples_X.append([key, neighbour.id])
                 samples_Y.append([0,1]) # like one-hot encoding
+                number_of_positive_samples+=1
+        for key, value1 in Graphs.external_graph.nodes.items():
+            for key_2, _ in Graphs.external_graph.nodes.items():
+                if not value1.contains_neighbour(key_2):
+                    negative_samples_X.append([key, key_2])
+        random.shuffle(negative_samples_X)
+        for i in range (0, (int)(len(samples_X)*Graphs.negative_to_positive_samples_ratio)):
+            samples_X.append([negative_samples_X[i][0], negative_samples_X[i][1]])
+            samples_Y.append([1, 0])
         samples_X, smaples_Y = np.array(samples_X), np.array(samples_Y)
         X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(samples_X, samples_Y)
         print (len(X_train))
@@ -138,6 +151,12 @@ class Node():
                 break
         if not node_exists_in_neighbour:
             node.neighbours.append(self)
+    
+    def contains_neighbour(self, id):
+        for neighbour in self.neighbours:
+            if neighbour.id == id:
+                return True
+        return False
 
     def __str__(self):
         return "Node: " + str(self.id) + " " +  str(len(self.neighbours)) #str(self.representation) + " : " + str(len(self.neighbours))
