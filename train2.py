@@ -34,7 +34,7 @@ for i, data in enumerate(train_loader, 0):
     
     optimizer.zero_grad()
     print (optimizer)
-    loss.backward(retain_graph=True)
+    loss.backward()#retain_graph=True)
    
     optimizer.step()
     

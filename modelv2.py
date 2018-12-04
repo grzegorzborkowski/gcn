@@ -73,8 +73,10 @@ class InternalGraphConvolutionLayer(Module):
                 sum += torch.mm(self.M, vec)
             sum = F.relu(sum)
             result += sum
-
-        return F.softmax(result, dim=1)
+        #print ("before internal", result)
+        to_return =  F.softmax(result, dim=0)
+        #print ("activation in internal", to_return)
+        return to_return
 
 class ExternalGraphConvolutionLayer(Module):
 
@@ -93,8 +95,8 @@ class ExternalGraphConvolutionLayer(Module):
         for neighbour in neighbours_embeddings:
            result += torch.mm(self.V, neighbour)
         result = F.relu(result)
-        result = F.softmax(result, dim=1)
-        return result
+        to_return = F.softmax(result, dim=0)
+        return to_return
 
 class LinkPredictionLayer(Module):
 
