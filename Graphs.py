@@ -81,6 +81,10 @@ class Graphs:
         print (len(X_train))
         return torch.from_numpy(X_train), torch.from_numpy(X_test), torch.FloatTensor(y_train), torch.FloatTensor(y_test)
 
+    @staticmethod
+    def get_internal_graph_nodes_embedding_matrix():
+        pass
+
 class AbstractGraph(abc.ABC):
     def __init__(self):
         self.nodes = {} # id -> Node
