@@ -12,7 +12,7 @@ class Graphs:
     node_representation_size = 64
     external_graph = None
     internal_graphs = {} # id_of_node_in_external_graph -> internal_graph
-    train_to_valid_ratio = 0.7
+    train_to_valid_ratio = 0.95
     unique_internal_nodes = 2268
     negative_to_positive_samples_ratio = 2.0
     
@@ -28,6 +28,7 @@ class Graphs:
             csv_reader = csv.reader(external_graph_file)
             for row_list in csv_reader:
                 row_list = [row.strip() for row in row_list]
+                row_list = row_list[:2]
                 node = Graphs.external_graph.get_or_create_node_external(int(row_list[0]))
                 for x in row_list[1:]:
                     if x != "":

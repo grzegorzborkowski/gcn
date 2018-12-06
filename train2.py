@@ -5,6 +5,9 @@ from sklearn.metrics import accuracy_score
 import torch.utils.data
 import torch.nn.functional as F
 from torch.autograd.variable import Variable
+from tensorboardX import SummaryWriter
+
+
 
 torch.set_printoptions(threshold=5000)
 Graphs.initialize()
@@ -13,6 +16,8 @@ Graphs.initialize()
 train_X, test_X, train_y, test_y = Graphs.get_train_valid_examples()
 train_datasets = torch.utils.data.TensorDataset(train_X, train_y)
 train_loader = torch.utils.data.DataLoader(train_datasets, batch_size=8)
+writer = SummaryWriter()
+
 
 model = DCNNv2()
 #loss_fn = F.binary_cross_entropy(size_average=False) # zmienic
@@ -20,6 +25,7 @@ learning_rate = 0.001
 epochs = 20
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 for epoch_id in range(epochs):
+    
     for i, data in enumerate(train_loader, 0):
         inputs, labels = data
         # print (inputs)
@@ -56,10 +62,19 @@ for epoch_id in range(epochs):
                 # print (name, "\n", param.data, "\n", "grad", param.grad)
         
         #accuracy = accuracy_score(test_y, predict_y)
-        if i % 25 == 0:
-            pass
+   
+    writer.add_pr_curve
+    print ("evaluating pr score")
+    writer.add_pr_curve("pr_curve, epoch_id:" + str(epoch_id), test_y, model(test_X))
+
+    writer.add_scalars('loss', {'training': F.binary_cross_entropy(model(train_X), train_y),
+                                'validation': F.binary_cross_entropy(model(test_X), test_y)}, epoch_id)
+            #pr_score = precision_recall_fscore_support(test_y, model(test_X))
+    #print (pr_score)
             #predict_out = model(test_X)
             #predict_y = torch.round(predict_out)
             #correct = (predict_y == test_y).float().sum() 
             #print ("accuracy", correct.item()/(len(test_y)*2))
         #print("accuracy", str(accuracy))
+
+writer.close()

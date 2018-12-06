@@ -105,7 +105,7 @@ class LinkPredictionLayer(Module):
         self.node_representation_size = Graphs.node_representation_size
         self.first_layer = nn.Linear(self.node_representation_size*2, self.node_representation_size)
         self.second_layer = nn.Linear(self.node_representation_size, 2)
-        #self.first_layer = nn.Linear(self.node_representation_size*2, 2)
+        #self.first_layer = nn.Linear(self.node_representation_sizex*2, 2)
     def forward(self, first_node_embedding, second_node_embedding):
         third_tensor = torch.cat((first_node_embedding, second_node_embedding), 0)
         # third_tensor = torch.cat((first_node_embedding*second_node_embedding,
