@@ -39,11 +39,7 @@ class DCNNv2(nn.Module):
             second_graph_embedding = self.external_graph_encoder.forward(second_index, second_graph_internal_encoder, list_of_second_graph_neighbour_embedding)
 
             result.append(self.link_prediction_layer.forward(first_graph_embedding, second_graph_embedding))
-        
-        # print("DCNNv2 result " + str(result))
-        # print (result)
         to_return = torch.stack(result)
-        # print("DCNNv2 to return " + str(to_return))
         reshaped = to_return.view(len(batch), 2)
         return reshaped
 
@@ -73,9 +69,7 @@ class InternalGraphConvolutionLayer(Module):
                 sum += torch.mm(self.M, vec)
             sum = F.relu(sum)
             result += sum
-        #print ("before internal", result)
         to_return =  F.softmax(result, dim=0)
-        #print ("activation in internal", to_return)
         return to_return
 
 class ExternalGraphConvolutionLayer(Module):
@@ -105,11 +99,8 @@ class LinkPredictionLayer(Module):
         self.node_representation_size = Graphs.node_representation_size
         self.first_layer = nn.Linear(self.node_representation_size*2, self.node_representation_size)
         self.second_layer = nn.Linear(self.node_representation_size, 2)
-        #self.first_layer = nn.Linear(self.node_representation_sizex*2, 2)
     def forward(self, first_node_embedding, second_node_embedding):
         third_tensor = torch.cat((first_node_embedding, second_node_embedding), 0)
-        # third_tensor = torch.cat((first_node_embedding*second_node_embedding,
-                                #   first_node_embedding+second_node_embedding), 0)
         third_tensor = third_tensor.reshape(1,Graphs.node_representation_size*2)
         x = F.leaky_relu(self.first_layer(third_tensor))
         x = self.second_layer(x)

@@ -6,26 +6,40 @@ import torch.utils.data
 import torch.nn.functional as F
 from torch.autograd.variable import Variable
 from tensorboardX import SummaryWriter
+import argparse
 
 
+parser = argparse.ArgumentParser()
+parser.add_argument('--node_representation_size', type=int, default=64)
+parser.add_argument('--negative_to_positive_link_ratio', type=float, default=2.0)
+parser.add_argument('--epochs', type=int, default=20)
+parser.add_argument('--learning_rate', type=float, default=0.1)
+parser.add_argument('--batch_size', type=int, default=8)
+
+args = parser.parse_args()
+args_params = vars(args)
+node_representation_size = args_params['node_representation_size']
+negative_to_positive_link_ratio = args_params['negative_to_positive_link_ratio']
+epochs = args_params['epochs']
+learning_rate = args_params['learning_rate']
+batch_size = args_params['batch_size']
 
 torch.set_printoptions(threshold=5000)
-Graphs.initialize()
+Graphs.initialize(node_representation_size=node_representation_size, 
+                negative_to_positive_link_ratio=negative_to_positive_link_ratio)
 #Graphs.external_graph.print_graph() #print_external_graph()
 # Graphs.get_internal_graph(0).print_graph()
 train_X, test_X, train_y, test_y = Graphs.get_train_valid_examples()
 train_datasets = torch.utils.data.TensorDataset(train_X, train_y)
-train_loader = torch.utils.data.DataLoader(train_datasets, batch_size=8)
+train_loader = torch.utils.data.DataLoader(train_datasets, batch_size=batch_size)
 writer = SummaryWriter()
 
 
 model = DCNNv2()
 #loss_fn = F.binary_cross_entropy(size_average=False) # zmienic
-learning_rate = 0.001
-epochs = 20
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 for epoch_id in range(epochs):
-    
+
     for i, data in enumerate(train_loader, 0):
         inputs, labels = data
         # print (inputs)
@@ -46,15 +60,9 @@ for epoch_id in range(epochs):
         optimizer.step()
         
     
-        # print ("predicted_out", predict_out)
     
-        #print ("predicted_maxed", predict_y)
+        # print ("predicted_maxed", y_pred)
 
-        # print ("predicted")
-        # print (predict_y)
-        # print (predict_y.shape)
-        # print ("test_y", test_y)
-        # print (test_y.shape)
 
         for name, param in model.named_parameters():
             pass
@@ -69,12 +77,4 @@ for epoch_id in range(epochs):
 
     writer.add_scalars('loss', {'training': F.binary_cross_entropy(model(train_X), train_y),
                                 'validation': F.binary_cross_entropy(model(test_X), test_y)}, epoch_id)
-            #pr_score = precision_recall_fscore_support(test_y, model(test_X))
-    #print (pr_score)
-            #predict_out = model(test_X)
-            #predict_y = torch.round(predict_out)
-            #correct = (predict_y == test_y).float().sum() 
-            #print ("accuracy", correct.item()/(len(test_y)*2))
-        #print("accuracy", str(accuracy))
-
 writer.close()

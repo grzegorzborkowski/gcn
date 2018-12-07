@@ -12,12 +12,14 @@ class Graphs:
     node_representation_size = 64
     external_graph = None
     internal_graphs = {} # id_of_node_in_external_graph -> internal_graph
-    train_to_valid_ratio = 0.95
+    train_to_valid_ratio = 0.05
     unique_internal_nodes = 2268
-    negative_to_positive_samples_ratio = 2.0
+    negative_to_positive_link_ratio = 2.0
     
     @staticmethod
-    def initialize():
+    def initialize(node_representation_size, negative_to_positive_link_ratio):
+        Graphs.node_representation_size = node_representation_size
+        Graphs.negative_to_positive_link_ratio = negative_to_positive_link_ratio
         Graphs.initialize_external_graph()
         Graphs.intialize_internal_graphs()
 
@@ -28,7 +30,7 @@ class Graphs:
             csv_reader = csv.reader(external_graph_file)
             for row_list in csv_reader:
                 row_list = [row.strip() for row in row_list]
-                row_list = row_list[:2]
+                row_list = row_list
                 node = Graphs.external_graph.get_or_create_node_external(int(row_list[0]))
                 for x in row_list[1:]:
                     if x != "":
@@ -87,11 +89,11 @@ class Graphs:
                 if not value1.contains_neighbour(key_2):
                     negative_samples_X.append([key, key_2])
         random.shuffle(negative_samples_X)
-        for i in range (0, (int)(len(samples_X)*Graphs.negative_to_positive_samples_ratio)):
+        for i in range (0, (int)(len(samples_X)*Graphs.negative_to_positive_link_ratio)):
             samples_X.append([negative_samples_X[i][0], negative_samples_X[i][1]])
             samples_Y.append([1, 0])
         samples_X, smaples_Y = np.array(samples_X), np.array(samples_Y)
-        X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(samples_X, samples_Y)
+        X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(samples_X, samples_Y, train_size=Graphs.train_to_valid_ratio)
         print (len(X_train))
         return torch.from_numpy(X_train), torch.from_numpy(X_test), torch.FloatTensor(y_train), torch.FloatTensor(y_test)
 
