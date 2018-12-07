@@ -58,7 +58,6 @@ class Graphs:
                 row_list = [row.strip() for row in row_list]
                 for element in range(1, len(row_list)):
                     if str(element) != "None":
-                        #print(str(id) + " " + str(element) + " " + str(row_list[element]))
                         first_node = Graphs.internal_graphs[id].get_or_create_node_internal(int(row_list[0]))
                         second_node = Graphs.internal_graphs[id].get_or_create_node_internal(int(row_list[element]))
                         first_node.add_neighbour(second_node)
