@@ -13,10 +13,12 @@ class DBLP():
         if DBLP.DEBUG: print ("[DBLP-Pipeline] Checking if stopwords for nltk package are downloaded")
         nltk.download('stopwords')
         if DBLP.DEBUG: print ("[DBLP-Pipeline] NLTK stopwords downloaded")
+        self.summary = {}
 
     def read_and_filter_dataset(self):
         if DBLP.DEBUG: print("[DBLP-Pipeline] Reading articles from file")
         initial_articles = self.__read_articles__()
+        self.summary['initial_articles_count'] = len(initial_articles)
         if DBLP.DEBUG: print("[DBLP-Pipeline] Reading articles from file has finished. Filtering articles without abstract")
         articles_without_abstract = self.__filter_articles_without_abstract__(initial_articles)
         if DBLP.DEBUG: print("[DBLP-Pipeline] Filtered articles without abstract. Tokenizing and removing stop words from abstract")
@@ -25,21 +27,26 @@ class DBLP():
         most_frequent_authors = self.__find__most_frequent_authors__(articles_tokenized)
         if DBLP.DEBUG: print("[DBLP-Pipeline] Filtering articles not containing top authors")
         articles_with_top_authors_only = self.__filter_articles_not_containing_top_authors__(articles_tokenized, most_frequent_authors)
+
         if DBLP.DEBUG: print("[DBLP-Pipeline] Calculating words frequency")
         top_words = self.__calculate_frequency_of_words__(articles_with_top_authors_only)
         if DBLP.DEBUG: print("[DBLP-Pipeline] Filtering unfrequent words from abstract")
         articles_with_filtered_abstract = self.__filter_unfrequent_words_from_abstract__(articles_with_top_authors_only, top_words)
         if DBLP.DEBUG: print("[DBLP-Pipeline] Removing non-existing artciles from quoted-by filed in articles")
         articles_with_updated_quoted_by = self.__update_quoted_by__(articles_with_filtered_abstract)
+        self.summary['articles_count'] = len(articles_with_updated_quoted_by)
         return articles_with_updated_quoted_by
 
     def prepare_graph_of_graphs_from_articles(self):
         pass
     
     def write_summary_of_dataset(self):
-        pass
-
-    
+        if DBLP.DEBUG: print("[DBLP-Pipeline] Writing a summary of dataset to summary.csv")
+        with open("summary.csv", "w") as file:
+            file.write("Initial articles count " + str(self.summary['initial_articles_count']) + "\n")
+            file.write("Count of articles after transformations " + str(self.summary['articles_count']) + "\n")
+            file.write("Number of words " + str(self.summary['number_of_words']) + "\n")
+            file.write("Number of positive edges in graph " + str(self.summary['number_of_positive_edges']) + "\n")
 
     def __read_articles__(self):
         articles = []
@@ -89,7 +96,7 @@ class DBLP():
                 pass
         return articles_copy
 
-    def __find__most_frequent_authors__(self, articles, top=1000):
+    def __find__most_frequent_authors__(self, articles, top=5000):
         authors_frequency = collections.defaultdict(int)
         for article in articles:
             authors = article['authors'].split(",")
@@ -108,7 +115,7 @@ class DBLP():
             return True
         return [article for article in articles if all_authors_in_top(article, top_authors)]
 
-    def __calculate_frequency_of_words__(self, articles, frequency_cap = 50):
+    def __calculate_frequency_of_words__(self, articles, frequency_cap = 500):
         frequency = collections.defaultdict(int)
         for article in articles:
             for word in article['abstract']:
@@ -116,6 +123,7 @@ class DBLP():
             
         top_words = list(sorted(frequency.items(), key=itemgetter(1),reverse=True))
         top_words = [word[0] for word in top_words if word[1] > frequency_cap]
+        self.summary['number_of_words'] = len(top_words)
         return top_words 
 
     def __filter_unfrequent_words_from_abstract__(self, articles, top_words):
@@ -125,6 +133,7 @@ class DBLP():
         return articles_copy
 
     def __update_quoted_by__(self, articles):
+        number_of_edges = 0 
         all_indexes = set()
         for article in articles:
             all_indexes.add(article['index'])
@@ -132,8 +141,11 @@ class DBLP():
         for article in articles_copy:
             updated_quoted = [quoted for quoted in article['quoted'] if quoted in all_indexes]
             article['quoted'] = updated_quoted
+            number_of_edges+= len(article['quoted'])
+        self.summary['number_of_positive_edges'] = number_of_edges
         return articles_copy
 
 if __name__ == "__main__":
     dblp = DBLP()
     filtered_documents = dblp.read_and_filter_dataset()
+    dblp.write_summary_of_dataset()
