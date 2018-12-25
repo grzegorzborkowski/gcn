@@ -4,12 +4,16 @@ import nltk
 import collections
 from operator import itemgetter
 from nltk.corpus import stopwords
+import argparse
 
 class DBLP():
 
     DEBUG = True
 
-    def __init__(self):
+    def __init__(self, authors_count, words_min_frequency, min_edges_for_article):
+        self.authors_count = authors_count
+        self.words_min_frequency = words_min_frequency
+        self.min_edges_for_article = min_edges_for_article
         if DBLP.DEBUG: print ("[DBLP-Pipeline] Checking if stopwords for nltk package are downloaded")
         nltk.download('stopwords')
         if DBLP.DEBUG: print ("[DBLP-Pipeline] NLTK stopwords downloaded")
@@ -100,7 +104,8 @@ class DBLP():
                 pass
         return articles_copy
 
-    def __find__most_frequent_authors__(self, articles, top=1000):
+    def __find__most_frequent_authors__(self, articles):
+        top=self.authors_count
         authors_frequency = collections.defaultdict(int)
         for article in articles:
             authors = article['authors'].split(",")
@@ -119,7 +124,8 @@ class DBLP():
             return True
         return [article for article in articles if all_authors_in_top(article, top_authors)]
 
-    def __calculate_frequency_of_words__(self, articles, frequency_cap = 1000):
+    def __calculate_frequency_of_words__(self, articles):
+        frequency_cap = self.words_min_frequency
         frequency = collections.defaultdict(int)
         for article in articles:
             for word in article['abstract']:
@@ -137,7 +143,8 @@ class DBLP():
         articles_copy = [article for article in articles if len(article['abstract']) > 0]
         return articles_copy
 
-    def __remove_articles_with_few_edges(self, articles, min_edges_cap = 5):
+    def __remove_articles_with_few_edges(self, articles):
+        min_edges_cap = self.min_edges_for_article
         return [article for article in articles if len(article['quoted']) > min_edges_cap]
 
     def __update_quoted_by__(self, articles):
@@ -160,6 +167,14 @@ class DBLP():
         return articles
 
 if __name__ == "__main__":
-    dblp = DBLP()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--authors_count", type=int, default=1000)
+    parser.add_argument("--words_min_frequency", type=int, default=1000)
+    parser.add_argument("--min_edges_for_article", type=int, default=5)
+
+    args = parser.parse_args()
+    args_params = vars(args)
+    authors_count, words_min_frequency, min_edges_for_article = args_params['authors_count'], args_params['words_min_frequency'], args_params['min_edges_for_article']
+    dblp = DBLP(authors_count=authors_count, words_min_frequency=words_min_frequency, min_edges_for_article=min_edges_for_article)
     filtered_documents = dblp.read_and_filter_dataset()
     dblp.write_summary_of_dataset()
