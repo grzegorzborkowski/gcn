@@ -26,7 +26,7 @@ class Graphs:
     @staticmethod
     def initialize_external_graph():
         Graphs.external_graph = ExternalGraph()
-        with open("../dataset/external_graph.csv") as external_graph_file:
+        with open("../toy_dataset/external_graph.csv") as external_graph_file:
             csv_reader = csv.reader(external_graph_file)
             for row_list in csv_reader:
                 row_list = [row.strip() for row in row_list]
@@ -38,7 +38,7 @@ class Graphs:
 
     @staticmethod
     def intialize_internal_graphs():
-        path = "../dataset/internal_graphs/"
+        path = "../toy_dataset/internal_graphs/"
         directory_with_graphs = os.listdir(path)
         for graph in directory_with_graphs:
             id = int(graph.split(".")[0])
