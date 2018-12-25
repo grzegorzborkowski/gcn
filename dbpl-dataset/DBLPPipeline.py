@@ -27,11 +27,15 @@ class DBLP():
         most_frequent_authors = self.__find__most_frequent_authors__(articles_tokenized)
         if DBLP.DEBUG: print("[DBLP-Pipeline] Filtering articles not containing top authors")
         articles_with_top_authors_only = self.__filter_articles_not_containing_top_authors__(articles_tokenized, most_frequent_authors)
-
+        if DBLP.DEBUG: print ("[DBLP-Pipeline] Remove articles with few edges")
+        articles_with_sufficient_edges = self.__remove_articles_with_few_edges(articles_with_top_authors_only)
         if DBLP.DEBUG: print("[DBLP-Pipeline] Calculating words frequency")
-        top_words = self.__calculate_frequency_of_words__(articles_with_top_authors_only)
+        top_words = self.__calculate_frequency_of_words__(articles_with_sufficient_edges)
         if DBLP.DEBUG: print("[DBLP-Pipeline] Filtering unfrequent words from abstract")
-        articles_with_filtered_abstract = self.__filter_unfrequent_words_from_abstract__(articles_with_top_authors_only, top_words)
+        articles_with_filtered_abstract = self.__filter_unfrequent_words_from_abstract__(articles_with_sufficient_edges, top_words)
+        if DBLP.DEBUG: print("[DBLP-Pipeline] Merging abstract content with title and authors")
+        self.__merge_article_abstract_and_title_authors__(articles_with_filtered_abstract)
+
         if DBLP.DEBUG: print("[DBLP-Pipeline] Removing non-existing artciles from quoted-by filed in articles")
         articles_with_updated_quoted_by = self.__update_quoted_by__(articles_with_filtered_abstract)
         self.summary['articles_count'] = len(articles_with_updated_quoted_by)
@@ -96,7 +100,7 @@ class DBLP():
                 pass
         return articles_copy
 
-    def __find__most_frequent_authors__(self, articles, top=5000):
+    def __find__most_frequent_authors__(self, articles, top=1000):
         authors_frequency = collections.defaultdict(int)
         for article in articles:
             authors = article['authors'].split(",")
@@ -115,7 +119,7 @@ class DBLP():
             return True
         return [article for article in articles if all_authors_in_top(article, top_authors)]
 
-    def __calculate_frequency_of_words__(self, articles, frequency_cap = 500):
+    def __calculate_frequency_of_words__(self, articles, frequency_cap = 1000):
         frequency = collections.defaultdict(int)
         for article in articles:
             for word in article['abstract']:
@@ -130,7 +134,11 @@ class DBLP():
         articles_copy = copy.deepcopy(articles)
         for article in articles_copy:
             article['abstract'] = [word for word in article['abstract'] if word in top_words]
+        articles_copy = [article for article in articles if len(article['abstract']) > 0]
         return articles_copy
+
+    def __remove_articles_with_few_edges(self, articles, min_edges_cap = 5):
+        return [article for article in articles if len(article['quoted']) > min_edges_cap]
 
     def __update_quoted_by__(self, articles):
         number_of_edges = 0 
@@ -141,9 +149,15 @@ class DBLP():
         for article in articles_copy:
             updated_quoted = [quoted for quoted in article['quoted'] if quoted in all_indexes]
             article['quoted'] = updated_quoted
-            number_of_edges+= len(article['quoted'])
+            number_of_edges += len(article['quoted'])
         self.summary['number_of_positive_edges'] = number_of_edges
         return articles_copy
+
+    def __merge_article_abstract_and_title_authors__(self, articles):
+        articles_copy = copy.deepcopy(articles)
+        for article in articles_copy:
+            article['merged_content'] = article['authors'].split(",") + article['title'].split(" ") + article['abstract']
+        return articles
 
 if __name__ == "__main__":
     dblp = DBLP()
