@@ -31,7 +31,7 @@ torch.set_printoptions(threshold=5000)
 Graphs.initialize(node_representation_size=node_representation_size, 
                 negative_to_positive_link_ratio=negative_to_positive_link_ratio)
 
-train_X, test_X, train_y, test_y = Graphs.get_train_valid_examples()
+train_X, valid_X, test_X, train_y, valid_y, test_y = Graphs.get_train_valid_examples()
 train_datasets = torch.utils.data.TensorDataset(train_X, train_y)
 train_loader = torch.utils.data.DataLoader(train_datasets, batch_size=batch_size)   
 writer = SummaryWriter()
@@ -39,6 +39,12 @@ writer = SummaryWriter()
 
 model = DCNNv2()
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+
+print ("Evaluating before training")
+y_pred = model(test_X)
+loss = F.binary_cross_entropy(y_pred, test_y)
+print ("loss on test before training")
+print (loss)
 for epoch_id in range(epochs):
 
     for i, data in enumerate(train_loader, 0):
@@ -63,4 +69,10 @@ for epoch_id in range(epochs):
 
     writer.add_scalars('loss', {'training': F.binary_cross_entropy(model(train_X), train_y),
                                 'validation': F.binary_cross_entropy(model(test_X), test_y)}, epoch_id)
+
+print ("Evaluating after training")
+y_pred = model(test_X)
+loss = F.binary_cross_entropy(y_pred, test_y)
+print ("loss on test after training")
+print (loss)
 writer.close()

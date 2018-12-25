@@ -12,9 +12,9 @@ class Graphs:
     node_representation_size = 64
     external_graph = None
     internal_graphs = {} # id_of_node_in_external_graph -> internal_graph
-    train_to_valid_ratio = 0.05
+    train_to_valid_ratio = 0.9
     unique_internal_nodes = 2268
-    negative_to_positive_link_ratio = 2.0
+    negative_to_positive_link_ratio = 1.0
     
     @staticmethod
     def initialize(node_representation_size, negative_to_positive_link_ratio):
@@ -92,9 +92,9 @@ class Graphs:
             samples_X.append([negative_samples_X[i][0], negative_samples_X[i][1]])
             samples_Y.append([1, 0])
         samples_X, smaples_Y = np.array(samples_X), np.array(samples_Y)
-        X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(samples_X, samples_Y, train_size=Graphs.train_to_valid_ratio)
-        print (len(X_train))
-        return torch.from_numpy(X_train), torch.from_numpy(X_test), torch.FloatTensor(y_train), torch.FloatTensor(y_test)
+        X_train, X_valid, y_train, y_valid = sklearn.model_selection.train_test_split(samples_X, samples_Y, train_size=Graphs.train_to_valid_ratio)
+        X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X_train, y_train, train_size=Graphs.train_to_valid_ratio)
+        return torch.from_numpy(X_train), torch.from_numpy(X_valid), torch.from_numpy(X_test), torch.FloatTensor(y_train), torch.FloatTensor(y_valid), torch.FloatTensor(y_test)
 
     @staticmethod
     def get_internal_graph_nodes_embedding_matrix():

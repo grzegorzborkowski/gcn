@@ -19,7 +19,7 @@ class DCNNv2(nn.Module):
     
     def forward(self, batch):
         result = []
-        for element in batch:
+        for idx, element in enumerate(batch):
             first_index, second_index = element[0].item(), element[1].item()
             first_graph_internal_encoder = self.internal_graph_encoder.forward(first_index)
             second_graph_internal_encoder = self.internal_graph_encoder.forward(second_index)
