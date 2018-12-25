@@ -1,0 +1,7 @@
+dbpl-dataset/.ipynb_checkpoints
+dbpl-dataset/*.txt
+runs/
+GCN_model/__pycache__/
+GCN_model/runs/
+.idea/
+__pycache__/
