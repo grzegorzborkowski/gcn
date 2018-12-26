@@ -5,6 +5,7 @@ import collections
 from operator import itemgetter
 from nltk.corpus import stopwords
 import argparse
+import os
 
 class DBLP():
 
@@ -38,16 +39,62 @@ class DBLP():
         if DBLP.DEBUG: print("[DBLP-Pipeline] Filtering unfrequent words from abstract")
         articles_with_filtered_abstract = self.__filter_unfrequent_words_from_abstract__(articles_with_sufficient_edges, top_words)
         if DBLP.DEBUG: print("[DBLP-Pipeline] Merging abstract content with title and authors")
-        self.__merge_article_abstract_and_title_authors__(articles_with_filtered_abstract)
+        articles_with_merged_content = self.__merge_article_abstract_and_title_authors__(articles_with_filtered_abstract)
 
         if DBLP.DEBUG: print("[DBLP-Pipeline] Removing non-existing artciles from quoted-by filed in articles")
-        articles_with_updated_quoted_by = self.__update_quoted_by__(articles_with_filtered_abstract)
+        articles_with_updated_quoted_by = self.__update_quoted_by__(articles_with_merged_content)
         self.summary['articles_count'] = len(articles_with_updated_quoted_by)
         return articles_with_updated_quoted_by
 
-    def prepare_graph_of_graphs_from_articles(self):
-        pass
+    def prepare_graph_of_graphs_from_articles(self, articles):
+        self.__prepare_external_graph__(articles)
+        self.__prepare_internal_graph__(articles)
     
+    def __prepare_external_graph__(self, articles):
+        if DBLP.DEBUG: print("[DBLP-Pipeline] Writing an external graph content to file")
+        with open("external_graph.csv", 'w') as file:
+            for article in articles:
+                line = article['index'] + "," + ",".join(article['quoted']) + "\n"
+                file.write(line)
+    
+    def __prepare_internal_graph__(self, articles):
+        if DBLP.DEBUG: print("[DBLP-Pipeline] Writing an internal graph content to files")
+        dictionary_of_words_mapping = self.__get_word_mapping_dictionary(articles)
+        current_value = 0
+
+        if DBLP.DEBUG: print ("[DBLP-Pipeline] Removing internal_graphs directory if exists")
+
+        if os.path.exists("internal_graphs"):
+            for file_path in os.listdir("internal_graphs"):
+                os.remove("internal_graphs/" + file_path)
+        os.removedirs("internal_graphs")
+
+        if DBLP.DEBUG: print ("[DBLP-Pipeline] Creating a internal-graphs directory")
+        
+        if not os.path.exists("internal_graphs"):
+            os.makedirs("internal_graphs")
+
+        for article in articles:
+            file_path = "internal_graphs/" + article["index"] + ".csv"
+            with open(file_path, 'w') as file:
+                self.__write_internal_graph_for_article__(article, file_path, file)
+
+    def __write_internal_graph_for_article__(self, article, file_path, file_descriptor):
+        pass
+
+    def __get_word_mapping_dictionary(self, articles):
+        if DBLP.DEBUG: print ("[DBLP-Pipeline] Preparing a mapping of words to indices")
+        dictionary_of_words_mapping = {}
+        current_value = 0
+        for article in articles:
+            print (article)
+            for word in article['merged_content']:
+                if word in dictionary_of_words_mapping: pass
+                else: 
+                    dictionary_of_words_mapping[word] = current_value
+                    current_value += 1
+        return dictionary_of_words_mapping
+
     def write_summary_of_dataset(self):
         if DBLP.DEBUG: print("[DBLP-Pipeline] Writing a summary of dataset to summary.csv")
         with open("summary.csv", "w") as file:
@@ -164,7 +211,7 @@ class DBLP():
         articles_copy = copy.deepcopy(articles)
         for article in articles_copy:
             article['merged_content'] = article['authors'].split(",") + article['title'].split(" ") + article['abstract']
-        return articles
+        return articles_copy
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -178,3 +225,4 @@ if __name__ == "__main__":
     dblp = DBLP(authors_count=authors_count, words_min_frequency=words_min_frequency, min_edges_for_article=min_edges_for_article)
     filtered_documents = dblp.read_and_filter_dataset()
     dblp.write_summary_of_dataset()
+    dblp.prepare_graph_of_graphs_from_articles(filtered_documents)
