@@ -5,9 +5,10 @@ from sklearn.metrics import accuracy_score
 import torch.utils.data
 import torch.nn.functional as F
 from torch.autograd.variable import Variable
-from tensorboardX import SummaryWriter
+#from tensorboardX import SummaryWriter
 import argparse
 from utils import *
+import tqdm
 
 
 parser = argparse.ArgumentParser()
@@ -34,7 +35,7 @@ Graphs.initialize(node_representation_size=node_representation_size,
 train_X, valid_X, test_X, train_y, valid_y, test_y = Graphs.get_train_valid_examples()
 train_datasets = torch.utils.data.TensorDataset(train_X, train_y)
 train_loader = torch.utils.data.DataLoader(train_datasets, batch_size=batch_size)   
-writer = SummaryWriter()
+#writer = SummaryWriter()
 
 
 model = DCNNv2()
@@ -45,14 +46,15 @@ y_pred = model(test_X)
 loss = F.binary_cross_entropy(y_pred, test_y)
 print ("loss on test before training")
 print (loss)
-for epoch_id in range(epochs):
+for epoch_id in tqdm.tqdm(range(epochs)):
 
     for i, data in enumerate(train_loader, 0):
         inputs, labels = data
         y_pred = model(inputs)
 
         loss = F.binary_cross_entropy(y_pred, labels)
-        print ("epoch ", epoch_id, " loss", i, loss.item())
+        if i%50 == 0:
+            print ("epoch ", epoch_id, " loss", i, loss.item())
         
         optimizer.zero_grad()
 
@@ -65,14 +67,14 @@ for epoch_id in range(epochs):
                 if param.requires_grad:
                     print (name, "\n", param.data, "\n", "grad", param.grad)
         
-    writer.add_pr_curve("pr_curve, epoch_id:" + str(epoch_id), test_y, model(test_X))
+    #writer.add_pr_curve("pr_curve, epoch_id:" + str(epoch_id), test_y, model(test_X))
 
-    writer.add_scalars('loss', {'training': F.binary_cross_entropy(model(train_X), train_y),
-                                'validation': F.binary_cross_entropy(model(test_X), test_y)}, epoch_id)
+    #writer.add_scalars('loss', {'training': F.binary_cross_entropy(model(train_X), train_y),
+    #                            'validation': F.binary_cross_entropy(model(test_X), test_y)}, epoch_id)
 
 print ("Evaluating after training")
 y_pred = model(test_X)
 loss = F.binary_cross_entropy(y_pred, test_y)
 print ("loss on test after training")
 print (loss)
-writer.close()
+#writer.close()
