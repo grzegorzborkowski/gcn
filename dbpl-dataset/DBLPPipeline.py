@@ -11,10 +11,11 @@ class DBLP():
 
     DEBUG = True
 
-    def __init__(self, authors_count, words_min_frequency, min_edges_for_article):
+    def __init__(self, authors_count, words_min_frequency, min_edges_for_article, ngrams):
         self.authors_count = authors_count
         self.words_min_frequency = words_min_frequency
         self.min_edges_for_article = min_edges_for_article
+        self.ngrams = ngrams
         if DBLP.DEBUG: print ("[DBLP-Pipeline] Checking if stopwords for nltk package are downloaded")
         nltk.download('stopwords')
         if DBLP.DEBUG: print ("[DBLP-Pipeline] NLTK stopwords downloaded")
@@ -82,7 +83,7 @@ class DBLP():
     def __write_internal_graph_for_article__(self, article, dictionary_of_words_mapping, file_path, file_descriptor):
         for word_idx in range(len(article['merged_content'])):
             id_of_current_word = dictionary_of_words_mapping[article['merged_content'][word_idx]]
-            n_grams_encoding = self.__get_ngrams_for_word__(article, word_idx, 2, dictionary_of_words_mapping)
+            n_grams_encoding = self.__get_ngrams_for_word__(article, word_idx, self.ngrams, dictionary_of_words_mapping)
             file_descriptor.write(str(dictionary_of_words_mapping[article['merged_content'][word_idx]]) + n_grams_encoding + "\n")
         return 
 
@@ -231,11 +232,12 @@ if __name__ == "__main__":
     parser.add_argument("--authors_count", type=int, default=1000)
     parser.add_argument("--words_min_frequency", type=int, default=1000)
     parser.add_argument("--min_edges_for_article", type=int, default=5)
+    parser.add_argument("--ngrams", type=int, default=3)
 
     args = parser.parse_args()
     args_params = vars(args)
-    authors_count, words_min_frequency, min_edges_for_article = args_params['authors_count'], args_params['words_min_frequency'], args_params['min_edges_for_article']
-    dblp = DBLP(authors_count=authors_count, words_min_frequency=words_min_frequency, min_edges_for_article=min_edges_for_article)
+    authors_count, words_min_frequency, min_edges_for_article, ngrams = args_params['authors_count'], args_params['words_min_frequency'], args_params['min_edges_for_article'], args_params['ngrams']
+    dblp = DBLP(authors_count=authors_count, words_min_frequency=words_min_frequency, min_edges_for_article=min_edges_for_article, ngrams=ngrams)
     filtered_documents = dblp.read_and_filter_dataset()
     dblp.write_summary_of_dataset()
     dblp.prepare_graph_of_graphs_from_articles(filtered_documents)
