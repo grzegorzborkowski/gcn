@@ -20,9 +20,9 @@ optional arguments:
 --authors_count - how many top authors (in terms of number of articles written) will be kept. All articles not written by those actors will be discarded. <br>
 --words_min_frequency - at least how many times a word has to occur in abstracts not to be removed
 <br>
---min_edges_for_article - remove all articles occuring less times than this number
---ngrams - how many adjacent words to use in creating internal graphs. Default set to 3.
---debug/no-debug enable or disable printing debug info. Default set to debug.
+--min_edges_for_article - remove all articles occuring less times than this number <br>
+--ngrams - how many adjacent words to use in creating internal graphs. Default set to 3. <br>
+--debug/no-debug enable or disable printing debug info. Default set to debug. <br>
 
 #### Extra information
 The dataset is here: 
