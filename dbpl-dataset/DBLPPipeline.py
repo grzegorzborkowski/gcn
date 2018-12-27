@@ -62,12 +62,12 @@ class DBLP():
         dictionary_of_words_mapping = self.__get_word_mapping_dictionary(articles)
         current_value = 0
 
-        if DBLP.DEBUG: print ("[DBLP-Pipeline] Removing internal_graphs directory if exists")
+        if DBLP.DEBUG: print ("[DBLP-Pipeline] Removing internal_graphs  directory and its content")
 
         if os.path.exists("internal_graphs"):
             for file_path in os.listdir("internal_graphs"):
                 os.remove("internal_graphs/" + file_path)
-        os.removedirs("internal_graphs")
+        if os.path.exists("internal_graphs"): os.removedirs("internal_graphs")
 
         if DBLP.DEBUG: print ("[DBLP-Pipeline] Creating a internal-graphs directory")
         
@@ -77,10 +77,23 @@ class DBLP():
         for article in articles:
             file_path = "internal_graphs/" + article["index"] + ".csv"
             with open(file_path, 'w') as file:
-                self.__write_internal_graph_for_article__(article, file_path, file)
+                self.__write_internal_graph_for_article__(article, dictionary_of_words_mapping, file_path, file)
 
-    def __write_internal_graph_for_article__(self, article, file_path, file_descriptor):
-        pass
+    def __write_internal_graph_for_article__(self, article, dictionary_of_words_mapping, file_path, file_descriptor):
+        for word_idx in range(len(article['merged_content'])):
+            id_of_current_word = dictionary_of_words_mapping[article['merged_content'][word_idx]]
+            n_grams_encoding = self.__get_ngrams_for_word__(article, word_idx, 2, dictionary_of_words_mapping)
+            file_descriptor.write(str(dictionary_of_words_mapping[article['merged_content'][word_idx]]) + n_grams_encoding + "\n")
+        return 
+
+    def __get_ngrams_for_word__(self, article, word_idx, n_grams, dictionary_of_words_mapping):
+        n_grams_result = []
+        for idx in range(word_idx, word_idx+n_grams):
+            if idx < len(article['merged_content']):
+                word = article['merged_content'][idx]
+                word_mapping = dictionary_of_words_mapping[word]
+                n_grams_result.append(str(word_mapping))
+        return ",".join(n_grams_result)
 
     def __get_word_mapping_dictionary(self, articles):
         if DBLP.DEBUG: print ("[DBLP-Pipeline] Preparing a mapping of words to indices")
