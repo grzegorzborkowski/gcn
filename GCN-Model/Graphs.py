@@ -13,20 +13,23 @@ class Graphs:
     external_graph = None
     internal_graphs = {} # id_of_node_in_external_graph -> internal_graph
     train_to_valid_ratio = 0.9
-    unique_internal_nodes = 2268
+    unique_internal_nodes = 22767
     negative_to_positive_link_ratio = 1.0
+    dataset_path = "../toy_dataset"
     
     @staticmethod
-    def initialize(node_representation_size, negative_to_positive_link_ratio):
+    def initialize(node_representation_size, negative_to_positive_link_ratio, dataset_path):
         Graphs.node_representation_size = node_representation_size
         Graphs.negative_to_positive_link_ratio = negative_to_positive_link_ratio
+        Graphs.dataset_path = dataset_path.value 
         Graphs.initialize_external_graph()
         Graphs.intialize_internal_graphs()
 
     @staticmethod
     def initialize_external_graph():
         Graphs.external_graph = ExternalGraph()
-        with open("../toy_dataset/external_graph.csv") as external_graph_file:
+        print (Graphs.dataset_path)
+        with open(Graphs.dataset_path + "external_graph.csv") as external_graph_file:
             csv_reader = csv.reader(external_graph_file)
             for row_list in csv_reader:
                 row_list = [row.strip() for row in row_list]
@@ -38,7 +41,8 @@ class Graphs:
 
     @staticmethod
     def intialize_internal_graphs():
-        path = "../toy_dataset/internal_graphs/"
+        path = Graphs.dataset_path + "internal_graphs/"
+        print (path)
         directory_with_graphs = os.listdir(path)
         for graph in directory_with_graphs:
             id = int(graph.split(".")[0])

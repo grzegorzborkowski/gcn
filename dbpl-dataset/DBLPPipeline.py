@@ -85,7 +85,7 @@ class DBLP():
         for word_idx in range(len(article['merged_content'])):
             id_of_current_word = dictionary_of_words_mapping[article['merged_content'][word_idx]]
             n_grams_encoding = self.__get_ngrams_for_word__(article, word_idx, self.ngrams, dictionary_of_words_mapping)
-            file_descriptor.write(str(dictionary_of_words_mapping[article['merged_content'][word_idx]]) + n_grams_encoding + "\n")
+            file_descriptor.write(str(dictionary_of_words_mapping[article['merged_content'][word_idx]]) + "," + n_grams_encoding + "\n")
         return 
 
     def __get_ngrams_for_word__(self, article, word_idx, n_grams, dictionary_of_words_mapping):
@@ -108,6 +108,7 @@ class DBLP():
                 else: 
                     dictionary_of_words_mapping[word] = current_value
                     current_value += 1
+        self.summary['unique_internal_nodes'] = current_value
         return dictionary_of_words_mapping
 
     def write_summary_of_dataset(self):
@@ -117,6 +118,7 @@ class DBLP():
             file.write("Count of articles after transformations " + str(self.summary['articles_count']) + "\n")
             file.write("Number of words " + str(self.summary['number_of_words']) + "\n")
             file.write("Number of positive edges in graph " + str(self.summary['number_of_positive_edges']) + "\n")
+            file.write("Number of unique internal nodes " + str(self.summary['unique_internal_nodes']) + "\n")
 
     def __read_articles__(self):
         articles = []
@@ -244,5 +246,5 @@ if __name__ == "__main__":
     authors_count, words_min_frequency, min_edges_for_article, ngrams, debug = args_params['authors_count'], args_params['words_min_frequency'], args_params['min_edges_for_article'], args_params['ngrams'], args_params['debug']
     dblp = DBLP(authors_count=authors_count, words_min_frequency=words_min_frequency, min_edges_for_article=min_edges_for_article, ngrams=ngrams, debug=debug)
     filtered_documents = dblp.read_and_filter_dataset()
-    dblp.write_summary_of_dataset()
     dblp.prepare_graph_of_graphs_from_articles(filtered_documents)
+    dblp.write_summary_of_dataset()
