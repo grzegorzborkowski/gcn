@@ -12,10 +12,13 @@ def str2bool(v):
 class Dataset(Enum):
     DBPL = "../dbpl-dataset/"
     TOY = "../toy_dataset/"
+    DRUGS = "../drugs-dataset/"
 
 def datasetchoice(choice):
     if choice == 'dbpl':
         return Dataset.DBPL
     if choice == 'toy':
         return Dataset.TOY
+    if choice == 'drugs':
+        return Dataset.DRUGS
     raise argparse.ArgumentTypeError('Expected dbpl or toy.')

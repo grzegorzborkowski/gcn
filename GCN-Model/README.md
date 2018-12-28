@@ -31,7 +31,7 @@ optional arguments: <br>
   --learning_rate LEARNING_RATE. Default 0.1 <br>
   --batch_size BATCH_SIZE Default 8<br>
   --debug_gradient DEBUG_GRADIENT Default False. Prints information about gradient after each training batch<br>
-  --dataset DATASET Default toy. Which dataset to choose to training Options: toy/dbpl. <br>
+  --dataset DATASET Default toy. Which dataset to choose to training Options: toy/dbpl/drugs. <br>
 
 
 Model described here: https://arxiv.org/pdf/1810.02080.pdf
