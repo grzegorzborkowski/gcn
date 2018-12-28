@@ -2,6 +2,7 @@ import csv
 import requests
 from bs4 import BeautifulSoup
 import re
+import tqdm
 
 class DrugBanksParser():
 
@@ -15,7 +16,7 @@ class DrugBanksParser():
         with open("external_graph.csv", "w") as external_graph_file:
             with open(self.init_dataset_path, 'r') as file:
                 csv_reader = csv.reader(file, delimiter="\t")
-                for row in csv_reader:
+                for row in tqdm.tqdm(csv_reader):
                     first_drug, second_drug = row[0][2:], row[1][2:]
                     
                     first_drug_smile_code = self.scrapper.get_drug_smile_code(first_drug)
@@ -52,6 +53,7 @@ class DrugBanksParser():
                             self.current_mapping_limit += 1
                         line += str(self.internal_graph_mapping[char])
                         line += ","
+                line = line[:-1]
                 line += "\n"
                 file.write(line)
         return smile_repr
