@@ -10,9 +10,9 @@ def str2bool(v):
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
 class Dataset(Enum):
-    DBPL = "../dbpl-dataset/"
-    TOY = "../toy_dataset/"
-    DRUGS = "../drugs-dataset/"
+    DBPL = ("../dbpl-dataset/", 22767)
+    TOY = ("../toy_dataset/", 2268)
+    DRUGS = ("../drugs-dataset/", 24)
 
 def datasetchoice(choice):
     if choice == 'dbpl':

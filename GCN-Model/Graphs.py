@@ -13,7 +13,7 @@ class Graphs:
     external_graph = None
     internal_graphs = {} # id_of_node_in_external_graph -> internal_graph
     train_to_valid_ratio = 0.9
-    unique_internal_nodes = 22767
+    unique_internal_nodes = 2268
     negative_to_positive_link_ratio = 1.0
     dataset_path = "../toy_dataset"
     
@@ -21,33 +21,36 @@ class Graphs:
     def initialize(node_representation_size, negative_to_positive_link_ratio, dataset_path):
         Graphs.node_representation_size = node_representation_size
         Graphs.negative_to_positive_link_ratio = negative_to_positive_link_ratio
-        Graphs.dataset_path = dataset_path.value 
+        Graphs.dataset_path = dataset_path.value[0]
+        Graphs.unique_internal_nodes = dataset_path.value[1]
         Graphs.initialize_external_graph()
         Graphs.intialize_internal_graphs()
 
     @staticmethod
     def initialize_external_graph():
-        Graphs.external_graph = ExternalGraph()
-        print (Graphs.dataset_path)
-        with open(Graphs.dataset_path + "external_graph.csv") as external_graph_file:
-            csv_reader = csv.reader(external_graph_file)
-            for row_list in csv_reader:
-                row_list = [row.strip() for row in row_list]
-                row_list = row_list
-                node = Graphs.external_graph.get_or_create_node_external(int(row_list[0]))
-                for x in row_list[1:]:
-                    if x != "":
-                        node.add_neighbour(Graphs.external_graph.get_or_create_node_external(int(x)))
+        if Graphs.external_graph is None:
+            Graphs.external_graph = ExternalGraph()
+            print (Graphs.dataset_path)
+            with open(Graphs.dataset_path + "external_graph.csv") as external_graph_file:
+                csv_reader = csv.reader(external_graph_file)
+                for row_list in csv_reader:
+                    row_list = [row.strip() for row in row_list]
+                    row_list = row_list
+                    node = Graphs.external_graph.get_or_create_node_external(int(row_list[0]))
+                    for x in row_list[1:]:
+                        if x != "":
+                            node.add_neighbour(Graphs.external_graph.get_or_create_node_external(int(x)))
 
     @staticmethod
     def intialize_internal_graphs():
-        path = Graphs.dataset_path + "internal_graphs/"
-        print (path)
-        directory_with_graphs = os.listdir(path)
-        for graph in directory_with_graphs:
-            id = int(graph.split(".")[0])
-            full_path = path + graph
-            Graphs.initialize_single_internal_graph_from_file(full_path, id)
+        if len(Graphs.internal_graphs) == 0:
+            path = Graphs.dataset_path + "internal_graphs/"
+            print (path)
+            directory_with_graphs = os.listdir(path)
+            for graph in directory_with_graphs:
+                id = int(graph.split(".")[0])
+                full_path = path + graph
+                Graphs.initialize_single_internal_graph_from_file(full_path, id)
 
     @staticmethod
     def initialize_single_internal_graph_from_file(file_path, id):
