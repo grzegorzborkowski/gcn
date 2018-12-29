@@ -7,6 +7,7 @@ import torch
 
 
 class DCNNv2(nn.Module):
+
     def __init__(self):
         super(DCNNv2, self).__init__()
 
@@ -42,6 +43,18 @@ class DCNNv2(nn.Module):
         to_return = torch.stack(result)
         reshaped = to_return.view(len(batch), 2)
         return reshaped
+
+    # TODO: refactor function above by reusing this one
+    def get_node_embedding(self, idx):
+        internal_encoding = self.internal_graph_encoder.forward(idx)
+        external_graph = Graphs.external_graph
+        first_graph_neighbours = external_graph.nodes[idx].neighbours
+        list_of_first_graph_neighbours_embedding = []
+        for node in first_graph_neighbours:
+            list_of_first_graph_neighbours_embedding.append(self.internal_graph_encoder.forward(node.id))
+        first_graph_embedding = self.external_graph_encoder.forward(idx, internal_encoding, list_of_first_graph_neighbours_embedding)
+        return first_graph_embedding
+            
 
 class InternalGraphConvolutionLayer(Module):
     def __init__(self):

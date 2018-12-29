@@ -16,6 +16,7 @@ class Graphs:
     unique_internal_nodes = 2268
     negative_to_positive_link_ratio = 1.0
     dataset_path = "../toy_dataset"
+    random_seed = 42
     
     @staticmethod
     def initialize(node_representation_size, negative_to_positive_link_ratio, dataset_path):
@@ -31,7 +32,7 @@ class Graphs:
         if Graphs.external_graph is None:
             Graphs.external_graph = ExternalGraph()
             print (Graphs.dataset_path)
-            with open(Graphs.dataset_path + "external_graph.csv") as external_graph_file:
+            with open(Graphs.dataset_path + "external_graph_copy.csv") as external_graph_file:
                 csv_reader = csv.reader(external_graph_file)
                 for row_list in csv_reader:
                     row_list = [row.strip() for row in row_list]
@@ -99,8 +100,8 @@ class Graphs:
             samples_X.append([negative_samples_X[i][0], negative_samples_X[i][1]])
             samples_Y.append([1, 0])
         samples_X, smaples_Y = np.array(samples_X), np.array(samples_Y)
-        X_train, X_valid, y_train, y_valid = sklearn.model_selection.train_test_split(samples_X, samples_Y, train_size=Graphs.train_to_valid_ratio)
-        X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X_train, y_train, train_size=Graphs.train_to_valid_ratio)
+        X_train, X_valid, y_train, y_valid = sklearn.model_selection.train_test_split(samples_X, samples_Y, train_size=Graphs.train_to_valid_ratio, random_state=Graphs.random_seed)
+        X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X_train, y_train, train_size=Graphs.train_to_valid_ratio, random_state=Graphs.random_seed)
         return torch.from_numpy(X_train), torch.from_numpy(X_valid), torch.from_numpy(X_test), torch.FloatTensor(y_train), torch.FloatTensor(y_valid), torch.FloatTensor(y_test)
 
     @staticmethod

@@ -9,7 +9,8 @@ from tensorboardX import SummaryWriter
 import argparse
 from utils import *
 import tqdm
-
+from sklearn.manifold import TSNE
+import matplotlib.pyplot as plt
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--node_representation_size', type=int, default=64)
@@ -78,7 +79,7 @@ for epoch_id in tqdm.tqdm(range(epochs)):
 
     writer.add_pr_curve("pr_curve, epoch_id:" + str(epoch_id), valid_y, model(valid_X))
 
-    writer.add_scalars('loss', {'training': F.binary_cross_entropy(model(valid_X), valid_y),
+    writer.add_scalars('loss', {'training': F.binary_cross_entropy(model(train_X), train_y),
                                'validation': F.binary_cross_entropy(model(valid_X), valid_y)}, epoch_id)
 
 print ("Evaluating after training")
@@ -94,4 +95,19 @@ writer.add_scalars('precision/recall/f1', {
                                 'f1_score': f1_score(test_y_numpy, y_pred_numpy > 0.5, average='samples')}, 1)
 print ("loss on test after training")
 print (loss)
+
+
+# TODO: Make this a separate function, and a parser option for plotting
+all_samples = []
+for sample in train_X:
+    first, second = sample[0].numpy(), sample[1].numpy()
+    first_embedding = model.get_node_embedding(first.item()).detach().numpy()
+    second_embedding = model.get_node_embedding(second.item()).detach().numpy()
+    all_samples.append(first_embedding.T.flatten())
+    all_samples.append(second_embedding.T.flatten())
+
+X_embedded = TSNE(n_components=2).fit_transform(all_samples[:1000])
+plt.scatter(X_embedded[:, 0], X_embedded[:, 1])
+plt.show()
+
 writer.close()
