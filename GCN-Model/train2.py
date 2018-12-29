@@ -1,7 +1,7 @@
 from Graphs import *
 from modelv2 import DCNNv2
 import torch.nn as nn
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 import torch.utils.data
 import torch.nn.functional as F
 from torch.autograd.variable import Variable
@@ -31,13 +31,13 @@ debug_gradient = args_params['debug_gradient']
 dataset_path = args_params['dataset']
 
 torch.set_printoptions(threshold=5000)
-Graphs.initialize(node_representation_size=node_representation_size, 
+Graphs.initialize(node_representation_size=node_representation_size,
                 negative_to_positive_link_ratio=negative_to_positive_link_ratio,
                 dataset_path=dataset_path)
 
 train_X, valid_X, test_X, train_y, valid_y, test_y = Graphs.get_train_valid_examples()
 train_datasets = torch.utils.data.TensorDataset(train_X, train_y)
-train_loader = torch.utils.data.DataLoader(train_datasets, batch_size=batch_size)   
+train_loader = torch.utils.data.DataLoader(train_datasets, batch_size=batch_size)
 writer = SummaryWriter()
 
 
@@ -46,7 +46,13 @@ optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 print ("Evaluating before training")
 y_pred = model(test_X)
+y_pred_numpy = y_pred.detach().numpy()
+test_y_numpy = test_y.detach().numpy()
 loss = F.binary_cross_entropy(y_pred, test_y)
+writer.add_scalars('precision/recall/f1', {
+                                'precision': precision_score(test_y_numpy, y_pred_numpy > 0.5, average='samples'),
+                                'recall': recall_score(test_y_numpy, y_pred_numpy > 0.5, average='samples'),
+                                'f1_score': f1_score(test_y_numpy, y_pred_numpy > 0.5, average='samples')}, 0 )
 print ("loss on test before training")
 print (loss)
 for epoch_id in tqdm.tqdm(range(epochs)):
@@ -58,26 +64,34 @@ for epoch_id in tqdm.tqdm(range(epochs)):
         loss = F.binary_cross_entropy(y_pred, labels)
         if i%50 == 0:
             print ("epoch ", epoch_id, " loss", i, loss.item())
-        
+
         optimizer.zero_grad()
 
         loss.backward()
-    
+
         optimizer.step()
-        
+
         for name, param in model.named_parameters():
             if debug_gradient:
                 if param.requires_grad:
                     print (name, "\n", param.data, "\n", "grad", param.grad)
-        
-    writer.add_pr_curve("pr_curve, epoch_id:" + str(epoch_id), test_y, model(test_X))
 
-    writer.add_scalars('loss', {'training': F.binary_cross_entropy(model(train_X), train_y),
-                               'validation': F.binary_cross_entropy(model(test_X), test_y)}, epoch_id)
+    writer.add_pr_curve("pr_curve, epoch_id:" + str(epoch_id), valid_y, model(valid_X))
+
+    writer.add_scalars('loss', {'training': F.binary_cross_entropy(model(valid_X), valid_y),
+                               'validation': F.binary_cross_entropy(model(valid_X), valid_y)}, epoch_id)
 
 print ("Evaluating after training")
 y_pred = model(test_X)
 loss = F.binary_cross_entropy(y_pred, test_y)
+
+y_pred_numpy = y_pred.detach().numpy()
+test_y_numpy = test_y.detach().numpy()
+
+writer.add_scalars('precision/recall/f1', {
+                                'precision': precision_score(test_y_numpy, y_pred_numpy > 0.5, average='samples'),
+                                'recall': recall_score(test_y_numpy, y_pred_numpy > 0.5, average='samples'),
+                                'f1_score': f1_score(test_y_numpy, y_pred_numpy > 0.5, average='samples')}, 1)
 print ("loss on test after training")
 print (loss)
 writer.close()
