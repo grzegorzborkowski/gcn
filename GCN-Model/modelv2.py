@@ -4,7 +4,8 @@ import torch.nn.functional as F
 from torch.nn.modules.module import Module
 from torch.nn.parameter import Parameter
 import torch
-
+from sklearn.manifold import TSNE
+import matplotlib.pyplot as plt
 
 class DCNNv2(nn.Module):
 
@@ -68,6 +69,15 @@ class InternalGraphConvolutionLayer(Module):
         self.Internal_Node_impact = nn.Embedding(self.how_many_internal_nodes_type, self.node_representation_size, sparse=False)
         torch.nn.init.xavier_normal_(self.W)
         torch.nn.init.xavier_normal_(self.M)
+
+    def visualize_internal_nodes_embedding(self):
+        all_samples = []
+        for idx in range(0, self.how_many_internal_nodes_type):
+            all_samples.append(self.Internal_Node_impact(torch.LongTensor([idx])).detach().numpy().flatten())
+        X_embedded = TSNE(n_components=2).fit_transform(all_samples)
+        plt.scatter(X_embedded[:, 0], X_embedded[:, 1])
+        plt.show()
+
         
     def forward(self, index):
         result = 0

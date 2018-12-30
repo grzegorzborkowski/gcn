@@ -110,4 +110,7 @@ X_embedded = TSNE(n_components=2).fit_transform(all_samples[:1000])
 plt.scatter(X_embedded[:, 0], X_embedded[:, 1])
 plt.show()
 
+####################################################################
+model.internal_graph_encoder.visualize_internal_nodes_embedding()
+
 writer.close()
