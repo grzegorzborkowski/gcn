@@ -21,6 +21,11 @@ parser.add_argument('--batch_size', type=int, default=8)
 parser.add_argument('--debug_gradient', type=str2bool, default=False)
 parser.add_argument('--dataset', type=datasetchoice, default=Dataset.TOY)
 
+parser.add_argument('--plot_internal_nodes_embedding', dest='internal_embedding', action='store_true')
+parser.add_argument('--plot_external_nodes_embedding', dest='external_embedding', action='store_true')
+parser.set_defaults(internal_embedding=False)
+parser.set_defaults(external_embedding=False)
+
 args = parser.parse_args()
 args_params = vars(args)
 node_representation_size = args_params['node_representation_size']
@@ -30,6 +35,9 @@ learning_rate = args_params['learning_rate']
 batch_size = args_params['batch_size']
 debug_gradient = args_params['debug_gradient']
 dataset_path = args_params['dataset']
+plot_internal_embedding = args_params['internal_embedding']
+plot_external_embedding = args_params['external_embedding']
+
 
 torch.set_printoptions(threshold=5000)
 Graphs.initialize(node_representation_size=node_representation_size,
@@ -97,20 +105,20 @@ print ("loss on test after training")
 print (loss)
 
 
-# TODO: Make this a separate function, and a parser option for plotting
-all_samples = []
-for sample in train_X:
-    first, second = sample[0].numpy(), sample[1].numpy()
-    first_embedding = model.get_node_embedding(first.item()).detach().numpy()
-    second_embedding = model.get_node_embedding(second.item()).detach().numpy()
-    all_samples.append(first_embedding.T.flatten())
-    all_samples.append(second_embedding.T.flatten())
+if plot_external_embedding:
+    all_samples = []
+    for sample in train_X:
+        first, second = sample[0].numpy(), sample[1].numpy()
+        first_embedding = model.get_node_embedding(first.item()).detach().numpy()
+        second_embedding = model.get_node_embedding(second.item()).detach().numpy()
+        all_samples.append(first_embedding.T.flatten())
+        all_samples.append(second_embedding.T.flatten())
 
-X_embedded = TSNE(n_components=2).fit_transform(all_samples[:1000])
-plt.scatter(X_embedded[:, 0], X_embedded[:, 1])
-plt.show()
+    X_embedded = TSNE(n_components=2).fit_transform(all_samples[:1000])
+    plt.scatter(X_embedded[:, 0], X_embedded[:, 1])
+    plt.show()
 
-####################################################################
-model.internal_graph_encoder.visualize_internal_nodes_embedding()
+if plot_internal_embedding:
+    model.internal_graph_encoder.visualize_internal_nodes_embedding()
 
 writer.close()

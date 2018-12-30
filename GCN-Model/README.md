@@ -8,7 +8,8 @@ usage: train2.py [-h] [--node_representation_size NODE_REPRESENTATION_SIZE]
                  [--negative_to_positive_link_ratio NEGATIVE_TO_POSITIVE_LINK_RATIO]
                  [--epochs EPOCHS] [--learning_rate LEARNING_RATE]
                  [--batch_size BATCH_SIZE] [--debug_gradient DEBUG_GRADIENT]
-                 [--dataset DATASET]
+                 [--dataset DATASET] [--plot_internal_nodes_embedding]
+                 [--plot_external_nodes_embedding]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -19,6 +20,8 @@ optional arguments:
   --batch_size BATCH_SIZE
   --debug_gradient DEBUG_GRADIENT
   --dataset DATASET
+  --plot_internal_nodes_embedding
+  --plot_external_nodes_embedding
 ```
 
 #### Parameters
@@ -32,6 +35,8 @@ optional arguments: <br>
   --batch_size BATCH_SIZE Default 8<br>
   --debug_gradient DEBUG_GRADIENT Default False. Prints information about gradient after each training batch<br>
   --dataset DATASET Default toy. Which dataset to choose to training Options: toy/dbpl/drugs. <br>
+  --plot_internal_nodes_embedding . Default false. <br>
+  --plot_external_nodes_embedding. Default false. <br>
 
 
 Model described here: https://arxiv.org/pdf/1810.02080.pdf
