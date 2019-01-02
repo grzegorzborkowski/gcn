@@ -102,10 +102,8 @@ class DBLP():
         dictionary_of_words_mapping = {}
         current_value = 0
         for article in articles:
-            print (article)
             for word in article['merged_content']:
-                if word in dictionary_of_words_mapping: pass
-                else: 
+                if word not in dictionary_of_words_mapping:
                     dictionary_of_words_mapping[word] = current_value
                     current_value += 1
         self.summary['unique_internal_nodes'] = current_value
@@ -204,7 +202,7 @@ class DBLP():
         articles_copy = copy.deepcopy(articles)
         for article in articles_copy:
             article['abstract'] = [word for word in article['abstract'] if word in top_words]
-        articles_copy = [article for article in articles if len(article['abstract']) > 0]
+        articles_copy = [article for article in articles_copy if len(article['abstract']) > 0]
         return articles_copy
 
     def __remove_articles_with_few_edges(self, articles):
@@ -227,7 +225,8 @@ class DBLP():
     def __merge_article_abstract_and_title_authors__(self, articles):
         articles_copy = copy.deepcopy(articles)
         for article in articles_copy:
-            article['merged_content'] = article['authors'].split(",") + article['title'].split(" ") + article['abstract']
+            # article['merged_content'] = article['authors'].split(",") + article['title'].split(" ") + article['abstract']
+            article['merged_content'] = article['title'].split(" ") + article['abstract']
         return articles_copy
 
 if __name__ == "__main__":
