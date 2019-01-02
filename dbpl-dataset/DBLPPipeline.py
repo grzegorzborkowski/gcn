@@ -26,26 +26,47 @@ class DBLP():
         if DBLP.DEBUG: print("[DBLP-Pipeline] Reading articles from file")
         initial_articles = self.__read_articles__()
         self.summary['initial_articles_count'] = len(initial_articles)
+
+        if DBLP.DEBUG: print ("[DBLP-Pipeline] Initial: Remove articles with few edges")
+        initial_articles = self.__remove_articles_with_few_edges(initial_articles)
+        
         if DBLP.DEBUG: print("[DBLP-Pipeline] Reading articles from file has finished. Filtering articles without abstract")
         articles_without_abstract = self.__filter_articles_without_abstract__(initial_articles)
+        
         if DBLP.DEBUG: print("[DBLP-Pipeline] Filtered articles without abstract. Tokenizing and removing stop words from abstract")
         articles_tokenized = self.__tokenize_and_remove_step_words_from_abstract__(articles_without_abstract)
+        
         if DBLP.DEBUG: print("[DBLP-Pipeline] Finding most frequent authors")
         most_frequent_authors = self.__find__most_frequent_authors__(articles_tokenized)
+        
         if DBLP.DEBUG: print("[DBLP-Pipeline] Filtering articles not containing top authors")
         articles_with_top_authors_only = self.__filter_articles_not_containing_top_authors__(articles_tokenized, most_frequent_authors)
-        if DBLP.DEBUG: print ("[DBLP-Pipeline] Remove articles with few edges")
-        articles_with_sufficient_edges = self.__remove_articles_with_few_edges(articles_with_top_authors_only)
+        
+        if DBLP.DEBUG: print("[DBLP-Pipeline] Removing non-existing artciles from quoted-by filed in articles")
+        articles_with_updated_quoted_by = self.__update_quoted_by__(articles_with_top_authors_only)
+        
         if DBLP.DEBUG: print("[DBLP-Pipeline] Calculating words frequency")
-        top_words = self.__calculate_frequency_of_words__(articles_with_sufficient_edges)
+        top_words = self.__calculate_frequency_of_words__(articles_with_updated_quoted_by)
+        
+        if DBLP.DEBUG: print("[DBLP-Pipeline] Building words to number of articles dictionary")
+        word_to_number_of_articles = self.__count_number_of_articles_per_word__(articles_with_top_authors_only)
+        
+        if DBLP.DEBUG: print("[DBLP-Pipeline] Filtering the most frequent words from abstract")
+        articles_with_filtered_abstract = self.__filter_the_most_frequent_words_from_abstract__(articles_with_top_authors_only, word_to_number_of_articles)
+        
         if DBLP.DEBUG: print("[DBLP-Pipeline] Filtering unfrequent words from abstract")
-        articles_with_filtered_abstract = self.__filter_unfrequent_words_from_abstract__(articles_with_sufficient_edges, top_words)
+        articles_with_filtered_abstract = self.__filter_unfrequent_words_from_abstract__(articles_with_filtered_abstract, top_words, word_to_number_of_articles)
+        
         if DBLP.DEBUG: print("[DBLP-Pipeline] Merging abstract content with title and authors")
         articles_with_merged_content = self.__merge_article_abstract_and_title_authors__(articles_with_filtered_abstract)
 
+        if DBLP.DEBUG: print ("[DBLP-Pipeline] Remove articles with few edges")
+        articles_with_sufficient_edges = self.__remove_articles_with_few_edges(articles_with_merged_content)
+
         if DBLP.DEBUG: print("[DBLP-Pipeline] Removing non-existing artciles from quoted-by filed in articles")
-        articles_with_updated_quoted_by = self.__update_quoted_by__(articles_with_merged_content)
+        articles_with_updated_quoted_by = self.__update_quoted_by__(articles_with_sufficient_edges)
         self.summary['articles_count'] = len(articles_with_updated_quoted_by)
+        
         return articles_with_updated_quoted_by
 
     def prepare_graph_of_graphs_from_articles(self, articles):
@@ -101,12 +122,22 @@ class DBLP():
         if DBLP.DEBUG: print ("[DBLP-Pipeline] Preparing a mapping of words to indices")
         dictionary_of_words_mapping = {}
         current_value = 0
+        all_words = 0
+        unique_words = 0
         for article in articles:
+            # print (article)
             for word in article['merged_content']:
-                if word not in dictionary_of_words_mapping:
+                all_words +=1
+                if word in dictionary_of_words_mapping: pass
+                else: 
                     dictionary_of_words_mapping[word] = current_value
                     current_value += 1
+                    unique_words +=1
+
+        print('All words: ' + str(all_words))
+        print('Unique words in selected articles: ' + str(unique_words))
         self.summary['unique_internal_nodes'] = current_value
+        print('self.summary[unique_internal_nodes]' + str(self.summary['unique_internal_nodes']))
         return dictionary_of_words_mapping
 
     def write_summary_of_dataset(self):
@@ -152,18 +183,27 @@ class DBLP():
         return articles
 
     def __filter_articles_without_abstract__(self, articles):
+
         return [article for article in articles if 'abstract' in article and 'authors' in article]
 
     def __tokenize_and_remove_step_words_from_abstract__(self, articles):
         tokenizer = nltk.tokenize.SpaceTokenizer()
         stop_words_set = set(stopwords.words('english'))
         articles_copy = copy.deepcopy(articles)
+        with_stop_words = 0
+        without_stop_words = 0
         for article in articles_copy:
             try:
                 article['abstract'] = tokenizer.tokenize(article['abstract'])
+                with_stop_words += len(article['abstract'])
                 article['abstract'] = [word for word in article['abstract'] if word not in stop_words_set]
+                without_stop_words += len(article['abstract'])
             except AttributeError:
                 pass
+
+        print('With stop words: ' + str(with_stop_words))
+        print('Without stop words ' + str(without_stop_words))
+        print('Removed stop words ' + str(with_stop_words-without_stop_words))
         return articles_copy
 
     def __find__most_frequent_authors__(self, articles):
@@ -173,6 +213,7 @@ class DBLP():
             authors = article['authors'].split(",")
             for author in authors:
                 authors_frequency[author]+=1
+        print('All authors ' + str(len(authors_frequency)))
         top_authors = list(sorted(authors_frequency.items(), key=itemgetter(1),reverse=True))
         top_authors = top_authors[:top]
         top_authors_without_occurences = [el[0] for el in top_authors]
@@ -194,46 +235,97 @@ class DBLP():
                 frequency[word] += 1
             
         top_words = list(sorted(frequency.items(), key=itemgetter(1),reverse=True))
-        top_words = [word[0] for word in top_words if word[1] > frequency_cap]
+        top_words = [word[0] for word in top_words if word[1] >= frequency_cap]
         self.summary['number_of_words'] = len(top_words)
+        print(top_words)
+        print('All words: ' + str(len(frequency)))
+        print('All words with min frequency: ' + str(len(top_words)))
         return top_words 
 
-    def __filter_unfrequent_words_from_abstract__(self, articles, top_words):
+    def __count_number_of_articles_per_word__(self, articles):
+        articles_copy = copy.deepcopy(articles)
+        word_to_number_of_articles = {}
+        for article in articles_copy:
+            words_per_article = set()
+            for word in article['abstract']:
+                words_per_article.add(word)
+            
+            for word in words_per_article:
+                if word in word_to_number_of_articles:
+                    word_to_number_of_articles[word] += 1
+                else:
+                    word_to_number_of_articles[word] = 1
+        return word_to_number_of_articles
+
+    def __filter_the_most_frequent_words_from_abstract__(self, articles, word_to_number_of_articles):
+        articles_copy = copy.deepcopy(articles)
+        word_in_most_articles = [word for word, occur in word_to_number_of_articles.items() if occur>len(articles_copy)/2]
+
+        previous = 0
+        new = 0
+        for article in articles_copy:
+            previous += len(article['abstract'])
+            article['abstract'] = [word for word in article['abstract'] if word not in word_in_most_articles]
+            new += len(article['abstract'])
+
+        print('All articles: ' + str(len(articles)))
+        articles_copy = [article for article in articles_copy if len(article['abstract']) > 0]
+        print('Articles containing valid words: ' + str(len(articles_copy)))
+        print('Removed articles containing only the most frequemt words: ' + str(len(articles)-len(articles_copy)))
+        print('Cummulative length of article[abstract] decreased by: ' + str(previous-new))
+        return articles_copy
+
+    def __filter_unfrequent_words_from_abstract__(self, articles, top_words, word_to_number_of_articles):
         articles_copy = copy.deepcopy(articles)
         for article in articles_copy:
-            article['abstract'] = [word for word in article['abstract'] if word in top_words]
+            article['abstract'] = [word for word in article['abstract'] if word_to_number_of_articles[word]>2 and word in top_words]
+
+        print('All articles: ' + str(len(articles)))
         articles_copy = [article for article in articles_copy if len(article['abstract']) > 0]
+        print('Articles containing valid frequent words: ' + str(len(articles_copy)))
+        print('Removed articles containing only unfrequent words: ' + str(len(articles)-len(articles_copy)))
         return articles_copy
 
     def __remove_articles_with_few_edges(self, articles):
         min_edges_cap = self.min_edges_for_article
-        return [article for article in articles if len(article['quoted']) > min_edges_cap]
+        print('All articles ' + str(len(articles)))
+        sufficient_edges_articles = [article for article in articles if len(article['quoted']) >= min_edges_cap]
+        print('Articles with sufficient edges ' + str(len(sufficient_edges_articles)))
+        return sufficient_edges_articles
 
     def __update_quoted_by__(self, articles):
         number_of_edges = 0 
         all_indexes = set()
+        previous = 0
+        new = 0
         for article in articles:
             all_indexes.add(article['index'])
         articles_copy = copy.deepcopy(articles)
         for article in articles_copy:
+            previous += len(article['quoted'])
             updated_quoted = [quoted for quoted in article['quoted'] if quoted in all_indexes]
             article['quoted'] = updated_quoted
+            new += len(article['quoted'])
             number_of_edges += len(article['quoted'])
         self.summary['number_of_positive_edges'] = number_of_edges
+
+        print('Quotations of processed articles ' + str(previous))
+        print('Quotations of remaining articles ' + str(new))
+        print('Qotations of removed articles ' + str(previous-new))
         return articles_copy
 
     def __merge_article_abstract_and_title_authors__(self, articles):
         articles_copy = copy.deepcopy(articles)
         for article in articles_copy:
             # article['merged_content'] = article['authors'].split(",") + article['title'].split(" ") + article['abstract']
-            article['merged_content'] = article['title'].split(" ") + article['abstract']
+            article['merged_content'] = article['abstract']
         return articles_copy
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--authors_count", type=int, default=1000)
-    parser.add_argument("--words_min_frequency", type=int, default=1000)
-    parser.add_argument("--min_edges_for_article", type=int, default=5)
+    parser.add_argument("--authors_count", type=int, default=10000)
+    parser.add_argument("--words_min_frequency", type=int, default=300)
+    parser.add_argument("--min_edges_for_article", type=int, default=15)
     parser.add_argument("--ngrams", type=int, default=3)
     parser.add_argument('--debug', dest='debug', action='store_true')
     parser.add_argument('--no-debug', dest='debug', action='store_false')
