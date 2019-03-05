@@ -10,7 +10,7 @@ def str2bool(v):
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
 class Dataset(Enum):
-    DBPL = ("../dbpl-dataset/", 630)
+    DBPL = ("../dbpl-dataset/", 146)
     TOY = ("../toy_dataset/", 2268)
     DRUGS = ("../drugs-dataset/", 24)
 
